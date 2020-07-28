@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/tv_msg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enter a frequency and play."
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.120000005" />
+
+    <EditText
+        android:id="@+id/et_frequency"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="Frequency"
+        android:inputType="numberDecimal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_msg"
+        app:layout_constraintVertical_bias="0.060000002" />
+
+    <EditText
+        android:id="@+id/et_beat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:ems="10"
+        android:hint="Beat"
+        android:inputType="numberDecimal"
+        app:layout_constraintEnd_toEndOf="@+id/et_frequency"
+        app:layout_constraintStart_toStartOf="@+id/et_frequency"
+        app:layout_constraintTop_toBottomOf="@+id/et_frequency" />
+
+    <EditText
+        android:id="@+id/et_shift"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:ems="10"
+        android:hint="Shift"
+        android:inputType="numberDecimal"
+        app:layout_constraintEnd_toEndOf="@+id/et_beat"
+        app:layout_constraintStart_toStartOf="@+id/et_beat"
+        app:layout_constraintTop_toBottomOf="@+id/et_beat" />
+
+    <Button
+        android:id="@+id/bt_play"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="bt_play_onClick"
+        android:text="Play"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.65"/>
+
+    <Button
+        android:id="@+id/bt_default"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Default"
+        android:onClick="bt_default_onClick"
+        app:layout_constraintEnd_toEndOf="@+id/bt_play"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="@+id/bt_play"
+        app:layout_constraintTop_toBottomOf="@+id/bt_stop" />
+
+    <Button
+        android:id="@+id/bt_stop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Stop"
+        android:onClick="bt_stop_onClick"
+        app:layout_constraintEnd_toEndOf="@+id/bt_default"
+        app:layout_constraintStart_toStartOf="@+id/bt_default"
+        app:layout_constraintTop_toBottomOf="@+id/bt_play" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
