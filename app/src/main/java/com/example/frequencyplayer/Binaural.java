@@ -108,6 +108,67 @@ public class Binaural {
         isBuffersFull = true;
     }
 
+    private static byte[] generateWavHeader(){
+        byte[] h = new byte[44];
+
+        // 0 - 3 : "RIFF"
+        h[0] = 'R';
+        h[1] = 'I';
+        h[2] = 'F';
+        h[3] = 'F';
+
+        // 4 - 7: file size
+        h[4] = ' ';
+        h[5] = ' ';
+        h[6] = ' ';
+        h[7] = ' ';
+
+        // 8 - 11 : "WAVE"
+        h[8] = 'W';
+        h[9] = 'A';
+        h[10] = 'V';
+        h[11] = 'E';
+
+        // 12 - 15 : "fmt "
+        h[12] = 'f';
+        h[13] = 'm';
+        h[14] = 't';
+        h[15] = '\0';
+
+        // 16 - 19 : length of format
+        h[16] = ' ';
+        h[17] = ' ';
+        h[18] = ' ';
+        h[19] = ' ';
+
+        // 20 - 21 : type of format (1 is PCM) - 2 byte integer
+        h[20] = ' ';
+        h[21] = ' ';
+
+        // 22 - 23 : number of channels - 2 byte integer
+        h[22] = ' ';
+        h[23] = ' ';
+
+        // 24 - 27 : sample rate - 32 byte integer
+        h[24] = ' ';
+        h[25] = ' ';
+        h[26] = ' ';
+        h[27] = ' ';
+
+        // 28 - 31 : sampleRate * bitsPerSample * channels / 8
+        h[28] = ' ';
+        h[29] = ' ';
+        h[30] = ' ';
+        h[31] = ' ';
+
+        // 32 -33
+        // TODO: Finish wav header generator. http://www.topherlee.com/software/pcm-tut-wavformat.html
+
+
+
+        return h;
+    }
+
     public static int writeWaveFile(String fileName){
         if (!isBuffersFull){
             return -1;
@@ -115,22 +176,6 @@ public class Binaural {
 
 
         int bufferSize = rightChannel.length;
-
-        byte[] wavHeader = new byte[44];
-        wavHeader[0] = 'R';
-        wavHeader[1] = 'I';
-        wavHeader[2] = 'F';
-        wavHeader[3] = 'F';
-        // 4 - 7: file size
-        wavHeader[8] = 'W';
-        wavHeader[9] = 'A';
-        wavHeader[10] = 'V';
-        wavHeader[11] = 'V';
-
-        wavHeader[12] = 'f';
-        wavHeader[13] = 'm';
-        wavHeader[14] = 't';
-
 
 
 
