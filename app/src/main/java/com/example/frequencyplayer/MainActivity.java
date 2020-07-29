@@ -3,6 +3,9 @@ package com.example.frequencyplayer;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.media.AudioAttributes;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
 import android.media.SoundPool;
 import android.os.Bundle;
 import android.util.Log;
@@ -19,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int BIT_DEPTH = 16;
 
     private static SoundPool soundPool;
+    private static AudioRecord audioRecord;
 
 
     // EditTexts
@@ -37,16 +41,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Initialize buttons
-        // bt_play = findViewById(R.id.bt_play);
-        // bt_stop = findViewById(R.id.bt_stop);
-        // bt_default = findViewById(R.id.bt_default);
-
-        // Initialize inputs
-        et_frequency = findViewById(R.id.et_frequency);
-        et_beat = findViewById(R.id.et_beat);
-        et_shift = findViewById(R.id.et_shift);
-
         // Initialize audio attributes
         AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -58,6 +52,27 @@ public class MainActivity extends AppCompatActivity {
                 .setMaxStreams(MAX_STREAMS)
                 .setAudioAttributes(audioAttributes)
                 .build();
+
+        AudioFormat = new AudioFormat().Builder().
+
+        AudioRecord = new AudioRecord.Builder()
+                .setAudioSource(MediaRecorder.AudioSource.DEFAULT)
+                .setAudioFormat(AudioFormat.E)
+
+        // Initialize buttons
+        // bt_play = findViewById(R.id.bt_play);
+        // bt_stop = findViewById(R.id.bt_stop);
+        // bt_default = findViewById(R.id.bt_default);
+
+        // Initialize inputs
+        et_frequency = findViewById(R.id.et_frequency);
+        et_beat = findViewById(R.id.et_beat);
+        et_shift = findViewById(R.id.et_shift);
+
+
+
+
+
     }
 
     private static Pair<Double, Boolean> validateValue(String str){
@@ -74,10 +89,6 @@ public class MainActivity extends AppCompatActivity {
             return new Pair<Double, Boolean>(0.0, false);
         }
         return new Pair<Double, Boolean>(value, true);
-    }
-
-    private static void createWavFile(){
-
     }
 
     public void bt_play_onClick(View view) {
@@ -97,6 +108,8 @@ public class MainActivity extends AppCompatActivity {
         double shift = shiftVal.second ? shiftVal.first : Binaural.DEFAULT_SHIFT;
 
         Log.d("inputDebugger",String.format("Frequency: %.5f Beat: %.5f Shift: %.5f", frequency, beat, shift));
+
+
 
         // Generate the raw data buffers for the audio samples
         // Binaural.generateBuffers(frequency, beat, shift);
