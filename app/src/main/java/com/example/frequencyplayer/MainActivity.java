@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.Pair;
 import android.view.View;
 import android.widget.Button;
@@ -12,7 +13,12 @@ import android.widget.EditText;
 
 public class MainActivity extends AppCompatActivity {
 
-   private SoundPool soundPool;
+    private static final String CUSTOM_CLIP_NAME = "custom.wav";
+    private static final int MAX_STREAMS = 6;
+    private static final int SAMPLE_RATE = 16 * 1024;
+    private static final int BIT_DEPTH = 16;
+
+    private static SoundPool soundPool;
 
 
     // EditTexts
@@ -25,23 +31,6 @@ public class MainActivity extends AppCompatActivity {
     // private Button bt_stop;
     // private Button bt_default;
 
-    private static final int MAX_STREAMS = 6;
-
-    protected Pair<Double, Boolean> validateValue(String str){
-        double value = 0.0;
-        boolean isErr = false;
-
-        try{
-            value = Double.parseDouble(str);
-            if (value <= 0){ isErr = true; }
-        }
-        catch (NumberFormatException e){ isErr = true; }
-
-        if (isErr){
-            return new Pair<Double, Boolean>(0.0, false);
-        }
-        return new Pair<Double, Boolean>(value, true);
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +60,26 @@ public class MainActivity extends AppCompatActivity {
                 .build();
     }
 
+    private static Pair<Double, Boolean> validateValue(String str){
+        double value = 0.0;
+        boolean isErr = false;
+
+        try{
+            value = Double.parseDouble(str);
+            if (value <= 0){ isErr = true; }
+        }
+        catch (NumberFormatException e){ isErr = true; }
+
+        if (isErr){
+            return new Pair<Double, Boolean>(0.0, false);
+        }
+        return new Pair<Double, Boolean>(value, true);
+    }
+
+    private static void createWavFile(){
+
+    }
+
     public void bt_play_onClick(View view) {
 
         String frequencyStr = et_frequency.getText().toString();
@@ -82,15 +91,20 @@ public class MainActivity extends AppCompatActivity {
         double frequency =  frequencyVal.second ? frequencyVal.first: Binaural.DEFAULT_FREQUENCY;
 
         Pair<Double, Boolean> beatVal = validateValue(beatStr);
-        double beat = beatVal.second ? beatVal.first : Binaural.DEFAULT_SHIFT;
+        double beat = beatVal.second ? beatVal.first : Binaural.DEFAULT_BEAT;
 
         Pair<Double, Boolean> shiftVal = validateValue(shiftStr);
         double shift = shiftVal.second ? shiftVal.first : Binaural.DEFAULT_SHIFT;
 
+        Log.d("inputDebugger",String.format("Frequency: %.5f Beat: %.5f Shift: %.5f", frequency, beat, shift));
+
         // Generate the raw data buffers for the audio samples
-        Binaural.generateBuffers(frequency, beat, shift);
+        // Binaural.generateBuffers(frequency, beat, shift);
         // TODO: Add functionality to the sound pool.
-        // TODO: Test the data validation.
+
+
+
+
         // soundPool.doSomething();
 
     }
