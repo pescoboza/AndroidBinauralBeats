@@ -17,7 +17,7 @@ public class Binaural {
     public static final short NUM_CHANNELS = 2;
 
     // Caduceus frequencies in Hz with integer exponents [185, 201].
-    private final static Map<Integer, Double> CADUCEUS_FREQUENCIES =  new HashMap<Integer, Double>(){{
+    public final static Map<Integer, Double> CADUCEUS_FREQUENCIES =  new HashMap<Integer, Double>(){{
         put(185, 0.25109329 );
         put(186, 0.406277478);
         put(187, 0.657370768);
@@ -37,11 +37,7 @@ public class Binaural {
         put(201, 554.1627785);
     }};
 
-    // Default options
-    private static final double DEFAULT_BEAT = 1.0;
-    private static final double DEFAULT_SHIFT = 180.0;
-    private static final double DEFAULT_FREQUENCY = 49.96882653; // CADUCEUS_FREQUENCIES.get(196);
-    private static int sampleDurationMs = 1000;
+
 
     // Data buffers
     private static short[] rightChannel;
@@ -49,10 +45,7 @@ public class Binaural {
     private static int numSamples = 0;
     private static boolean isBuffersFull = false;
 
-    public static void setSampleDurationMs(int ms){
-        Binaural.sampleDurationMs = ms;
-    }
-
+    // Creates an audio buffer with a single period of sine.
     private static short[] createSinWaveBuffer(double frequency, double shiftDeg) {
         double shiftRad = Math.toRadians(shiftDeg);
         int numSamplesPerPeriod = (int)(SAMPLE_RATE / frequency);
@@ -66,10 +59,12 @@ public class Binaural {
         return buffer;
     }
 
+    // Fills internal buffers with the discrete number of period loops to approximate the duration.
     public static void generateBuffers(double frequency, double beat, double shiftDeg, double durationMs){
         generateBuffers(frequency, beat, shiftDeg, (int)(durationMs*1000/frequency));
     }
 
+    // Fills internal buffers with a single period of frequency repeated n times.
     public static void generateBuffers(double frequency, double beat, double shiftDeg, int numLoops){
         if (numLoops <= 0){
             throw new IllegalArgumentException("Number of loops must me positive.");

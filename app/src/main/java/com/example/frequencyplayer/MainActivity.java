@@ -4,9 +4,11 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.media.SoundPool;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Pair;
@@ -16,14 +18,19 @@ import android.widget.EditText;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String CUSTOM_CLIP_NAME = "custom.wav";
+    // Default options
+    private static final double DEFAULT_BEAT = 1.0;
+    private static final double DEFAULT_SHIFT = 180.0;
+    private static final double DEFAULT_FREQUENCY = Binaural.CADUCEUS_FREQUENCIES.get(196); // 49.96882653 Hz
+
+    private static final String CUSTOM_CLIP_NAME = "custom";
+    private static final double LOOPED_SAMPLE_DURATION = 1.61803;
     private static final int MAX_STREAMS = 6;
-    private static final int SAMPLE_RATE = 16 * 1024;
-    private static final int BIT_DEPTH = 16;
+    private static final int SAMPLE_RATE = Binaural.SAMPLE_RATE;
+    private static final short BIT_DEPTH = Binaural.BIT_DEPTH;
 
     private static SoundPool soundPool;
     private static AudioRecord audioRecord;
-
 
     // EditTexts
     private EditText et_frequency;
@@ -41,23 +48,26 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Initialize audio attributes
-        AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                .build();
 
-        // Create a sound pool
-        soundPool = new SoundPool.Builder()
-                .setMaxStreams(MAX_STREAMS)
-                .setAudioAttributes(audioAttributes)
-                .build();
 
-        AudioFormat = new AudioFormat().Builder().
+        // Create a sound pool, check for SDK API version
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
 
-        AudioRecord = new AudioRecord.Builder()
-                .setAudioSource(MediaRecorder.AudioSource.DEFAULT)
-                .setAudioFormat(AudioFormat.E)
+            // Initialize audio attributes
+            AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build();
+
+            soundPool = new SoundPool.Builder()
+                    .setMaxStreams(MAX_STREAMS)
+                    .setAudioAttributes(audioAttributes)
+                    .build();
+        }else{
+            soundPool = new SoundPool(MAX_STREAMS, AudioManager.STREAM_MUSIC, 0);
+        }
+
+
 
         // Initialize buttons
         // bt_play = findViewById(R.id.bt_play);
@@ -68,9 +78,6 @@ public class MainActivity extends AppCompatActivity {
         et_frequency = findViewById(R.id.et_frequency);
         et_beat = findViewById(R.id.et_beat);
         et_shift = findViewById(R.id.et_shift);
-
-
-
 
 
     }
@@ -93,32 +100,37 @@ public class MainActivity extends AppCompatActivity {
 
     public void bt_play_onClick(View view) {
 
+        // Get the string from the EditText objects
         String frequencyStr = et_frequency.getText().toString();
         String beatStr = et_beat.getText().toString();
         String shiftStr = et_shift.getText().toString();
 
         // Validate all numbers parsed from text
         Pair<Double, Boolean> frequencyVal = validateValue(frequencyStr);
-        double frequency =  frequencyVal.second ? frequencyVal.first: Binaural.DEFAULT_FREQUENCY;
-
         Pair<Double, Boolean> beatVal = validateValue(beatStr);
-        double beat = beatVal.second ? beatVal.first : Binaural.DEFAULT_BEAT;
-
         Pair<Double, Boolean> shiftVal = validateValue(shiftStr);
-        double shift = shiftVal.second ? shiftVal.first : Binaural.DEFAULT_SHIFT;
 
+        // Use default values for invalid inputs
+        double frequency =  frequencyVal.second ? frequencyVal.first: DEFAULT_FREQUENCY;
+        double beat = beatVal.second ? beatVal.first : DEFAULT_BEAT;
+        double shift = shiftVal.second ? shiftVal.first : DEFAULT_SHIFT;
+
+        // Debug logging info
         Log.d("inputDebugger",String.format("Frequency: %.5f Beat: %.5f Shift: %.5f", frequency, beat, shift));
 
+        // Generate the wav audio buffers
+        Binaural.generateBuffers(frequency, beat, shift, LOOPED_SAMPLE_DURATION);
 
+        // Create a .wav file from the PCM data
+        Binaural.writeWaveFile(CUSTOM_CLIP_NAME + ".wav");
 
-        // Generate the raw data buffers for the audio samples
-        // Binaural.generateBuffers(frequency, beat, shift);
-        // TODO: Add functionality to the sound pool.
+        // Load the .wav file into the SoundPool
+        soundPool.load(CUSTOM_CLIP_NAME, MAX_STREAMS);
 
+        // Set the sound to looping
+        soundPool.setLoop(MAX_STREAMS, -1);
 
-
-
-        // soundPool.doSomething();
+        soundPool.pl;
 
     }
 
