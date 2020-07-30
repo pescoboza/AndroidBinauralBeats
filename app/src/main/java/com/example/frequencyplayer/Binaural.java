@@ -1,5 +1,7 @@
 package com.example.frequencyplayer;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -144,13 +146,16 @@ public class Binaural {
     }
 
     private static ByteBuffer condenseBuffers(){
-        ByteBuffer buff = ByteBuffer.allocate(numSamples*NUM_CHANNELS*BIT_DEPTH/8);
-
-
-        for (int i = 0; i < numSamples; i++){
-            short rightSample = (short)rightChannel[i];
-            short leftSample = (short)leftChannel[i];
+        if (!isBuffersFull){
+            throw new IllegalStateException("Audio data buffers must be filled first.");
         }
+
+        ByteBuffer buff = ByteBuffer.allocate(numSamples*NUM_CHANNELS*BIT_DEPTH/8);
+        for (int i = 0; i < numSamples; i++){
+            buff.putShort(rightChannel[i]);
+            buff.putShort(leftChannel[i]);
+        }
+        return buff;
     }
 
     public static void clearBuffers(){
@@ -162,21 +167,22 @@ public class Binaural {
 
 
     // ByteBuffer dataSrc, int numData, short numChannels, int sampleRate, int bitsPerSample
-    public static int writeWaveFile(String fileName, ){
+    public static void writeWaveFile(String fileName){
         if (!isBuffersFull){
-            throw new IllegalStateException("PCM buffers must be generated first.");
+            throw new IllegalStateException("Audio data buffers must be generated first.");
         }
 
 
+        ByteBuffer condensedChannels = condenseBuffers();
+        ByteBuffer wavBuffer = generateWavBuffer(condensedChannels, numSamples);
 
-        ByteBuffer wavBuffer = generateWavBuffer();
-
-        for (int i = 0; i < numSamples; i++) {
-            // TODO: Write code to generate .wav file.
+        try {
+            final FileOutputStream fos = new FileOutputStream(fileName);
+            fos.write(wavBuffer.array());
+            fos.close();
+        }catch(Exception e){
+            e.printStackTrace();
+            System.err.println("FileIO Error. Please contact the developer.");
         }
-
-
-
     }
-
 }
