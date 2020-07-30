@@ -115,27 +115,36 @@ public class Binaural {
         isBuffersFull = false;
     }
 
-    private static byte[] generateWavHeader(){
-
-
-
-        ByteBuffer buff = ByteBuffer.allocate(44);
-        buff.put("RIFF".getBytes(), 0 ,4);    //  1 - 4 : "RIFF"
-        buff.putInt(0);                                     //  5 - 8 : Size of the overall file - 8 bytes, in bytes (32-bit integer)
-        buff.put("WAVE".getBytes(), 0, 4);    //  9 - 12 : File type header: "WAVE"
-        buff.put("fmt\0".getBytes(),0,4);     // 13 - 16 : Format chunk marker: "fmt\0"
-        buff.putInt(dataLength);                            // 17 - 20 : Length of format data as listed above - 32 bit integer
-        buff.putShort((short)1);                            // 21 - 22 : Type of format (1 is PCM) - 2 byte integer
-        buff.putShort((short)2);                            // 23 - 24 : Number of channels - 2 byte integer
-        buff.putInt(SAMPLE_RATE);                           // 25 - 28 : Sample rate - 32 bit integer
-        buff.
-
+    private static ByteBuffer generateWavHeader(){
+        int dataLength = 0;
+        short numChannels = (short)2;
+        int SAMPLE_RATE = 0;
+        int bitsPerSample = 0;
 
         // TODO: Finish wav header generator. http://www.topherlee.com/software/pcm-tut-wavformat.html
 
+        ByteBuffer buff = ByteBuffer.allocate(44);
+        buff.put("RIFF".getBytes(), 0 ,4);            //  1 -  4 : "RIFF"
+        buff.putInt(0);                                             //  5 -  8 : Size of the overall file - 8 bytes, in bytes (32-bit integer)
+        buff.put("WAVE".getBytes(), 0, 4);            //  9 - 12 : File type header: "WAVE"
+        buff.put("fmt\0".getBytes(),0,4);             // 13 - 16 : Format chunk marker: "fmt\0" (with trailing null)
+        buff.putInt(dataLength);                                    // 17 - 20 : Length of format data as listed above (32-bit integer)
+        buff.putShort((short)1);                                    // 21 - 22 : Type of format (1 is PCM) (2 byte integer)
+        buff.putShort(numChannels);                                 // 23 - 24 : Number of channels (2 byte integer)
+        buff.putInt(SAMPLE_RATE);                                   // 25 - 28 : Sample rate (32-bit integer)
+        buff.putInt((int)(SAMPLE_RATE*bitsPerSample*numChannels/8));// 29 - 32 : (sampleRate*bitsPerSample*numChannels)/8 (32-bit integer)
+        buff.putInt((int)bitsPerSample*numChannels);                // 33 - 34 : (bitsPerSample*numChannels)/8 TODO: figure this one out.
+        buff.putShort((short)bitsPerSample);                        // 35 - 36 : Bits per sample
+        buff.put("data".getBytes(), 0, 4);            // 37 - 40 : "data" chunk header
+        buff.putInt(dataLength);                                    // 41 - 44 : File size (data)
+
+        return buff;
 
 
-        return h;
+
+
+
+
     }
 
     public static int writeWaveFile(String fileName){
