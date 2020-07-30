@@ -96,7 +96,7 @@ public class Binaural {
 
             // For each sample
             for (int i = 0; i < minSampleSize; i++){
-                Log.d("for loop debug", "loopNum: " + loopNum + "  i: " + i);
+                //Log.d("for loop debug", "loopNum: " + loopNum + "  i: " + i);
 
                 rightChannel[loopNum*i] = rightTemp[i];
                 leftChannel[loopNum*i] = leftTemp[i];
