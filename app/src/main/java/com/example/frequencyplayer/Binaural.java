@@ -3,6 +3,8 @@ package com.example.frequencyplayer;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 
+import androidx.arch.core.util.Function;
+
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -115,31 +117,58 @@ public class Binaural {
         isBuffersFull = false;
     }
 
-    private static ByteBuffer generateWavHeader(int dataLength, short numChannels, int sampleRate, int bitsPerSample){
+    private static ByteBuffer generateWavBuffer(ByteBuffer dataSrc, int numData, short numChannels, int sampleRate, int bitsPerSample){
 
-        int headerLength = 44;
+        // Validate numData
+        if (numData <= 0){
+            throw new IllegalArgumentException("numData must be positive.");
+        }
 
+        // Validate numChannels
+        if (!(numChannels == 1 || numChannels == 2)){
+            throw new IllegalArgumentException("Invalid numChannels value. Possible values: 1, 2")
+        }
+
+        // Validate bitsPerSample
+        if (!(bitsPerSample == 8 ||
+                bitsPerSample == 16 ||
+                bitsPerSample == 32)) {
+            throw new IllegalArgumentException("Invalid bitsPerSample value. Possible values: 8, 16, 32");
+        }
+
+
+        // Get the file length in bytes
+        final int LENGTH_OF_FORMAT_DATA = 16;
+        final int HEADER_LENGTH_BYTES = 44;
+        int dataLengthBytes = numData*bitsPerSample/8;
+        int fileLength = HEADER_LENGTH_BYTES + dataLengthBytes;
+
+        // Preallocate for the length of the file
+        ByteBuffer wavBuff = ByteBuffer.allocate(HEADER_LENGTH_BYTES + dataLengthBytes);
+
+        // Create WAV file header
         // Thanks to http://www.topherlee.com/software/pcm-tut-wavformat.html
-        ByteBuffer buff = ByteBuffer.allocate(headerLength);
-
-        buff.put("RIFF".getBytes(), 0 ,4);            //  1 -  4 : "RIFF"
-        buff.putInt(headerLength + dataLength);                     //  5 -  8 : Size of the overall file - 8 bytes, in bytes (32-bit integer)
-        buff.put("WAVE".getBytes(), 0, 4);            //  9 - 12 : File type header: "WAVE"
-        buff.put("fmt\0".getBytes(),0,4);             // 13 - 16 : Format chunk marker: "fmt\0" (with trailing null)
-        buff.putInt(dataLength);                                    // 17 - 20 : Length of format data as listed above (32-bit integer)
-        buff.putShort((short)1);                                    // 21 - 22 : Type of format (1 is PCM) (16-bit integer)
-        buff.putShort((short)numChannels);                          // 23 - 24 : Number of channels (16-bit integer)
-        buff.putInt(sampleRate);                                    // 25 - 28 : Sample rate (32-bit integer)
-        buff.putInt((int)(sampleRate*bitsPerSample*numChannels/8)); // 29 - 32 : (sampleRate*bitsPerSample*numChannels)/8 (32-bit integer)
-        buff.putShort((short)(bitsPerSample*numChannels));          // 33 - 34 : (bitsPerSample*numChannels)/8 (16-bit integer)
-        buff.putShort((short)bitsPerSample);                        // 35 - 36 : Bits per sample
-        buff.put("data".getBytes(), 0, 4);            // 37 - 40 : "data" chunk header
-        buff.putInt(dataLength);                                    // 41 - 44 : File size (data)
+        wavBuff.put("RIFF".getBytes(), 0 ,4);            //  1 -  4 : "RIFF"
+        wavBuff.putInt(fileLength);                                    //  5 -  8 : Size of the overall file - 8 bytes, in bytes (32-bit integer)
+        wavBuff.put("WAVE".getBytes(), 0, 4);            //  9 - 12 : File type header: "WAVE"
+        wavBuff.put("fmt\0".getBytes(),0,4);             // 13 - 16 : Format chunk marker: "fmt\0" (with trailing null)
+        wavBuff.putInt(LENGTH_OF_FORMAT_DATA);                         // 17 - 20 : Length of format data as listed above (32-bit integer)
+        wavBuff.putShort((short)1);                                    // 21 - 22 : Type of format (1 is PCM) (16-bit integer)
+        wavBuff.putShort((short)numChannels);                          // 23 - 24 : Number of channels (16-bit integer)
+        wavBuff.putInt(sampleRate);                                    // 25 - 28 : Sample rate (32-bit integer)
+        wavBuff.putInt((int)(sampleRate*bitsPerSample*numChannels/8)); // 29 - 32 : (sampleRate*bitsPerSample*numChannels)/8 (32-bit integer)
+        wavBuff.putShort((short)(bitsPerSample*numChannels));          // 33 - 34 : (bitsPerSample*numChannels)/8 (16-bit integer)
+        wavBuff.putShort((short)bitsPerSample);                        // 35 - 36 : Bits per sample
+        wavBuff.put("data".getBytes(), 0, 4);            // 37 - 40 : "data" chunk header
+        wavBuff.putInt(dataLengthBytes);                               // 41 - 44 : File size (data)
 
 
+        // Append the byte data to the wav header
+        byte[] temp = new byte[dataLengthBytes];
+        dataSrc.get(temp);
+        wavBuff.put(temp);
 
-        return buff;
-
+        return wavBuff;
     }
 
     public static int writeWaveFile(String fileName){
