@@ -3,6 +3,7 @@ package com.example.frequencyplayer;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -109,6 +110,18 @@ public class Binaural {
     }
 
     private static byte[] generateWavHeader(){
+
+        ByteBuffer buff = ByteBuffer.allocate(44);
+        buff.put("RIFF".getBytes(), 0 ,4);    //  1 - 4 : "RIFF"
+        buff.putInt(0);                                     //  5 - 8 : Size of the overall file - 8 bytes, in bytes (32-bit integer)
+        buff.put("WAVE".getBytes(), 0, 4);    //  9 - 12 : File type header: "WAVE"
+        buff.put("fmt\0".getBytes(),0,4);     // 13 - 16 : Format chunk marker: "fmt\0"
+        buff.put("\0\0\0\0".getBytes(),0,4);  // 17 - 20 : Length of format data as listed above
+        buff.putShort((short)1);                            // 21 - 22 : Type of format (1 is PCM) - 2 byte integer
+        buff.putShort((short)2);                            // 23 - 23 : Number of channels - 2 byte integer
+
+
+
         byte[] h = new byte[44];
 
         // 0 - 3 : "RIFF"
