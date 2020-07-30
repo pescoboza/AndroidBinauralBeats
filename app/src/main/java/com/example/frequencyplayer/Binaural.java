@@ -1,6 +1,5 @@
 package com.example.frequencyplayer;
 
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -70,29 +69,34 @@ public class Binaural {
             throw new IllegalArgumentException("Number of loops must me positive.");
         }
 
-        short[] right = createSinWaveBuffer(frequency,0.0);
-        short[] left = createSinWaveBuffer(frequency + beat, shiftDeg);
+        // Clear the current data buffers
+        clearBuffers();
 
-        int numSamplesPerPeriod = right.length;
+        // Create buffers for the raw data
+        short[] rightTemp = createSinWaveBuffer(frequency, 0.0);
+        short[] leftTemp = createSinWaveBuffer(frequency + beat, shiftDeg);
 
-        if (numLoops > 1){
-            int channelLen = numSamplesPerPeriod*numLoops;
+        // If there is only one loop, we're done
+        if (numLoops == 1) {
+            rightChannel = rightTemp;
+            leftChannel = leftTemp;
+            isBuffersFull = true;
+            return;
+        }
 
-            rightChannel = new short[channelLen];
-            leftChannel = new short[channelLen];
+        // Create vectors to grow as needed per loop
+        int newChannelSize = numLoops*numSamples;
+        rightChannel = new short[newChannelSize];
+        leftChannel = new short[newChannelSize];
 
-            for (int i = 0; i < channelLen; i++) {
-                int destPos = i*channelLen;
-                System.arraycopy(right, 0, rightChannel, destPos, numSamplesPerPeriod);
+        // For each loop
+        for (int loopNum = 1; loopNum <= numLoops; loopNum++){
+
+            // For each sample
+            for (int i = 0; i < rightTemp.length; i++){
+                rightChannel[loopNum*i] = rightTemp[i];
+                leftChannel[loopNum*i] = leftTemp[i];
             }
-
-            numSamples = channelLen;
-
-        }else {
-            rightChannel = right;
-            leftChannel = left;
-
-            numSamples = numSamplesPerPeriod;
         }
 
         isBuffersFull = true;
@@ -131,7 +135,6 @@ public class Binaural {
         ByteBuffer wavBuff = ByteBuffer.allocate(HEADER_LENGTH_BYTES + dataLengthBytes);
 
         // Create WAV file header
-
         wavBuff.put("RIFF".getBytes(), 0 ,4);            //  1 -  4 big: "RIFF"
         wavBuff.putInt(fileLength);                                    //  5 -  8 lil: Size of the overall file - 8 bytes, in bytes (32-bit integer)
         wavBuff.put("WAVE".getBytes(), 0, 4);            //  9 - 12 big: File type header: "WAVE"
@@ -148,12 +151,13 @@ public class Binaural {
 
 
         // Append the byte data to the wav header
-        byte[] temp = new byte[dataLengthBytes];
-        ByteBuffer condensedChannels = condenseBuffers();
-        condensedChannels.position(0);
-        condensedChannels.get(temp);
-        wavBuff.put(temp);
-
+        {
+            byte[] temp = new byte[dataLengthBytes];
+            ByteBuffer condensedChannels = condenseBuffers();
+            condensedChannels.position(0);
+            condensedChannels.get(temp);
+            wavBuff.put(temp);
+        }
         return wavBuff;
     }
 

@@ -10,6 +10,7 @@ import android.media.MediaRecorder;
 import android.media.SoundPool;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
@@ -42,18 +43,16 @@ public class MainActivity extends AppCompatActivity {
     // private Button bt_stop;
     // private Button bt_default;
 
+    private static int customSoundId;
+    private static int customSoundStreamId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-
-        // Create a sound pool, check for SDK API version
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
-
-            // Initialize audio attributes
+        // Initialize audio attributes
+        {
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_MEDIA)
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
@@ -63,11 +62,7 @@ public class MainActivity extends AppCompatActivity {
                     .setMaxStreams(MAX_STREAMS)
                     .setAudioAttributes(audioAttributes)
                     .build();
-        }else{
-            soundPool = new SoundPool(MAX_STREAMS, AudioManager.STREAM_MUSIC, 0);
         }
-
-
 
         // Initialize buttons
         // bt_play = findViewById(R.id.bt_play);
@@ -79,7 +74,8 @@ public class MainActivity extends AppCompatActivity {
         et_beat = findViewById(R.id.et_beat);
         et_shift = findViewById(R.id.et_shift);
 
-
+        customSoundId = 0;
+        customSoundStreamId = 0;
     }
 
     private static Pair<Double, Boolean> validateValue(String str){
@@ -125,20 +121,33 @@ public class MainActivity extends AppCompatActivity {
         Binaural.writeWaveFile(CUSTOM_CLIP_NAME + ".wav");
 
         // Load the .wav file into the SoundPool
-        soundPool.load(CUSTOM_CLIP_NAME, MAX_STREAMS);
+        customSoundId = soundPool.load(CUSTOM_CLIP_NAME, MAX_STREAMS);
 
-        // Set the sound to looping
-        soundPool.setLoop(MAX_STREAMS, -1);
+        // Play the sound in a loop
+        customSoundStreamId = soundPool.play(customSoundId, 1, 1,MAX_STREAMS, -1, 1);
 
-        soundPool.pl;
-
+        Log.d("app activity", "*PLAY*");
     }
 
     public void bt_default_onClick(View view) {
+        // Stop the audio
+        stopSound();
 
+        // Reset the default parameters of the EditText objects
+        et_frequency.setText(String.valueOf(DEFAULT_FREQUENCY));
+        et_beat.setText(String.valueOf(DEFAULT_BEAT));
+        et_shift.setText(String.valueOf(DEFAULT_SHIFT));
 
+        Log.d("app activity", "*RESET*");
+    }
+
+    private static void stopSound(){
+        soundPool.stop(customSoundStreamId);
+        Log.d("app activity", "*STOP*");
     }
 
     public void bt_stop_onClick(View view) {
+        // Make the sound pool go silent
+        stopSound();
     }
 }
