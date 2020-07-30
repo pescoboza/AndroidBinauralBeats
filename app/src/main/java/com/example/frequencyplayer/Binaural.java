@@ -37,6 +37,7 @@ public class Binaural {
 
     private static int[] rightChannel;
     private static int[] leftChannel;
+    private static int bufferLength = 0;
 
     private static final double DEFAULT_BEAT = 1.0;
     private static final double DEFAULT_SHIFT = 180.0;
@@ -95,9 +96,13 @@ public class Binaural {
                 System.arraycopy(right, 0, rightChannel, destPos, numSamplesPerPeriod);
             }
 
+            bufferLength = channelLen;
+
         }else {
             rightChannel = right;
             leftChannel = left;
+
+            bufferLength = numSamplesPerPeriod;
         }
 
         isBuffersFull = true;
@@ -106,75 +111,26 @@ public class Binaural {
     public static void clearBuffers(){
         rightChannel = null;
         leftChannel = null;
-        isBuffersFull = true;
+        bufferLength = 0;
+        isBuffersFull = false;
     }
 
     private static byte[] generateWavHeader(){
+
+
 
         ByteBuffer buff = ByteBuffer.allocate(44);
         buff.put("RIFF".getBytes(), 0 ,4);    //  1 - 4 : "RIFF"
         buff.putInt(0);                                     //  5 - 8 : Size of the overall file - 8 bytes, in bytes (32-bit integer)
         buff.put("WAVE".getBytes(), 0, 4);    //  9 - 12 : File type header: "WAVE"
         buff.put("fmt\0".getBytes(),0,4);     // 13 - 16 : Format chunk marker: "fmt\0"
-        buff.put("\0\0\0\0".getBytes(),0,4);  // 17 - 20 : Length of format data as listed above
+        buff.putInt(dataLength);                            // 17 - 20 : Length of format data as listed above - 32 bit integer
         buff.putShort((short)1);                            // 21 - 22 : Type of format (1 is PCM) - 2 byte integer
-        buff.putShort((short)2);                            // 23 - 23 : Number of channels - 2 byte integer
+        buff.putShort((short)2);                            // 23 - 24 : Number of channels - 2 byte integer
+        buff.putInt(SAMPLE_RATE);                           // 25 - 28 : Sample rate - 32 bit integer
+        buff.
 
 
-
-        byte[] h = new byte[44];
-
-        // 0 - 3 : "RIFF"
-        h[0] = 'R';
-        h[1] = 'I';
-        h[2] = 'F';
-        h[3] = 'F';
-
-        // 4 - 7: file size
-        h[4] = ' ';
-        h[5] = ' ';
-        h[6] = ' ';
-        h[7] = ' ';
-
-        // 8 - 11 : "WAVE"
-        h[8] = 'W';
-        h[9] = 'A';
-        h[10] = 'V';
-        h[11] = 'E';
-
-        // 12 - 15 : "fmt "
-        h[12] = 'f';
-        h[13] = 'm';
-        h[14] = 't';
-        h[15] = '\0';
-
-        // 16 - 19 : length of format
-        h[16] = ' ';
-        h[17] = ' ';
-        h[18] = ' ';
-        h[19] = ' ';
-
-        // 20 - 21 : type of format (1 is PCM) - 2 byte integer
-        h[20] = ' ';
-        h[21] = ' ';
-
-        // 22 - 23 : number of channels - 2 byte integer
-        h[22] = ' ';
-        h[23] = ' ';
-
-        // 24 - 27 : sample rate - 32 byte integer
-        h[24] = ' ';
-        h[25] = ' ';
-        h[26] = ' ';
-        h[27] = ' ';
-
-        // 28 - 31 : sampleRate * bitsPerSample * channels / 8
-        h[28] = ' ';
-        h[29] = ' ';
-        h[30] = ' ';
-        h[31] = ' ';
-
-        // 32 -33
         // TODO: Finish wav header generator. http://www.topherlee.com/software/pcm-tut-wavformat.html
 
 
