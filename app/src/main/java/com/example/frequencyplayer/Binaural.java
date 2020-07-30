@@ -9,6 +9,11 @@ import java.util.Map;
 
 public class Binaural {
 
+    // Built in features
+    public static final int SAMPLE_RATE = 44100;
+    public static final short BIT_DEPTH = 16;
+    public static final short NUM_CHANNELS = 2;
+
     // Caduceus frequencies in Hz with integer exponents [185, 201].
     private final static Map<Integer, Double> CADUCEUS_FREQUENCIES =  new HashMap<Integer, Double>(){{
         put(185, 0.25109329 );
@@ -30,66 +35,32 @@ public class Binaural {
         put(201, 554.1627785);
     }};
 
+    // Default options
     private static final double DEFAULT_BEAT = 1.0;
     private static final double DEFAULT_SHIFT = 180.0;
-    private static final double DEFAULT_FREQUENCY = CADUCEUS_FREQUENCIES.get(196) //  49.96882653 Hz
-
-    private static int sampleRate = 16*1024;
-    private static int bitDepth = 16;
+    private static final double DEFAULT_FREQUENCY = 49.96882653; // CADUCEUS_FREQUENCIES.get(196);
     private static int sampleDurationMs = 1000;
-    private static int bitDepthFactor = (int)((Math.pow(2, Binaural.bitDepth)-1)/2);
 
-    private static short numChannels = 2;
-    private static int[] rightChannel;
-    private static int[] leftChannel;
+    // Data buffers
+    private static short[] rightChannel;
+    private static short[] leftChannel;
     private static int numSamples = 0;
-
-
-
     private static boolean isBuffersFull = false;
-
-    public static void setSampleRate(int sampleRate){
-        Binaural.sampleRate = sampleRate;
-    }
-
-    public static int getSampleRate(){
-        return Binaural.sampleRate;
-    }
-
-    public static void setBitDepth(int bitDepth){
-        if (!(bitDepth == 8 || bitDepth == 16)) {
-
-        }
-
-        Binaural.bitDepth = bitDepth;
-        Binaural.bitDepthFactor = (int)((Math.pow(2, Binaural.bitDepth)-1)/2);
-    }
-
-    public static int getBitDepth(){
-        return Binaural.bitDepth;
-    }
 
     public static void setSampleDurationMs(int ms){
         Binaural.sampleDurationMs = ms;
     }
 
-    public static void setNumChannels(short numChannels){
-        Binaural.numChannels = numChannels;
-    }
 
-    public static short getNumChannels(){
-        return Binaural.numChannels;
-    }
-
-    private static int[] createSinWaveBuffer(double frequency, double shiftDeg) {
+    private static short[] createSinWaveBuffer(double frequency, double shiftDeg) {
         double shiftRad = Math.toRadians(shiftDeg);
-        int numSamplesPerPeriod = (int)(sampleRate / frequency);
+        int numSamplesPerPeriod = (int)(SAMPLE_RATE / frequency);
 
-        int[] buffer = new int[numSamplesPerPeriod];
+        short[] buffer = new short[numSamplesPerPeriod];
 
         for (int i = 0; i< numSamplesPerPeriod; i++) {
             double angle = 2.0*Math.PI*i/numSamplesPerPeriod;
-            buffer[i] = (int)(Math.sin(angle + shiftRad) * bitDepthFactor);
+            buffer[i] = (short)(Math.sin(angle + shiftRad) * 32767); // 32767: [-1 1] double to short
         }
         return buffer;
     }
@@ -103,16 +74,16 @@ public class Binaural {
             throw new IllegalArgumentException("Number of loops must me positive.");
         }
 
-        int[] right = createSinWaveBuffer(frequency,0.0);
-        int[] left = createSinWaveBuffer(frequency + beat, shiftDeg);
+        short[] right = createSinWaveBuffer(frequency,0.0);
+        short[] left = createSinWaveBuffer(frequency + beat, shiftDeg);
 
         int numSamplesPerPeriod = right.length;
 
         if (numLoops > 1){
             int channelLen = numSamplesPerPeriod*numLoops;
 
-            rightChannel = new int[channelLen];
-            leftChannel = new int[channelLen];
+            rightChannel = new short[channelLen];
+            leftChannel = new short[channelLen];
 
             for (int i = 0; i < channelLen; i++) {
                 int destPos = i*channelLen;
@@ -131,30 +102,17 @@ public class Binaural {
         isBuffersFull = true;
     }
 
-    private static ByteBuffer generateWavBuffer(ByteBuffer dataSrc, int numData, short numChannels, int sampleRate, short bitsPerSample){
+    private static ByteBuffer generateWavBuffer(ByteBuffer dataSrc, int numData){
 
         // Validate numData
         if (numData <= 0){
             throw new IllegalArgumentException("numData must be positive.");
         }
 
-        // Validate numChannels
-        if (!(numChannels == 1 || numChannels == 2)){
-            throw new IllegalArgumentException("Invalid numChannels value. Possible values: 1, 2");
-        }
-
-        // Validate bitsPerSample
-        if (!(bitsPerSample == 8 ||
-                bitsPerSample == 16 ||
-                bitsPerSample == 32)) {
-            throw new IllegalArgumentException("Invalid bitsPerSample value. Possible values: 8, 16");
-        }
-
-
         // Get the file length in bytes
         final int LENGTH_OF_FORMAT_DATA = 16;
         final int HEADER_LENGTH_BYTES = 44;
-        int dataLengthBytes = numData*bitsPerSample/8;
+        int dataLengthBytes = numData*BIT_DEPTH/8;
         int fileLength = HEADER_LENGTH_BYTES + dataLengthBytes;
 
         // Preallocate for the length of the file
@@ -168,11 +126,11 @@ public class Binaural {
         wavBuff.put("fmt\0".getBytes(),0,4);             // 13 - 16 big: Format chunk marker: "fmt\0" (with trailing null)
         wavBuff.putInt(LENGTH_OF_FORMAT_DATA);                         // 17 - 20 lil: Length of fmt chunk 1, always 16 (32-bit integer)
         wavBuff.putShort((short)1);                                    // 21 - 22 lil: Audio format (1 is PCM) (16-bit integer)
-        wavBuff.putShort((short)numChannels);                          // 23 - 24 lil: Number of channels (16-bit integer)
-        wavBuff.putInt(sampleRate);                                    // 25 - 28 lil: Sample rate (32-bit integer)
-        wavBuff.putInt((int)(sampleRate*bitsPerSample*numChannels/8)); // 29 - 32 lil: Byte rate: (sampleRate*bitsPerSample*numChannels)/8 (32-bit integer)
-        wavBuff.putShort((short)(bitsPerSample*numChannels));          // 33 - 34 lil: Block align: (bitsPerSample*numChannels)/8 (16-bit integer)
-        wavBuff.putShort((short)bitsPerSample);                        // 35 - 36 lil: Bits per sample
+        wavBuff.putShort((short)NUM_CHANNELS);                          // 23 - 24 lil: Number of channels (16-bit integer)
+        wavBuff.putInt(SAMPLE_RATE);                                    // 25 - 28 lil: Sample rate (32-bit integer)
+        wavBuff.putInt((int)(SAMPLE_RATE*BIT_DEPTH*NUM_CHANNELS/8)); // 29 - 32 lil: Byte rate: (sampleRate*bitsPerSample*numChannels)/8 (32-bit integer)
+        wavBuff.putShort((short)(BIT_DEPTH*NUM_CHANNELS));          // 33 - 34 lil: Block align: (bitsPerSample*numChannels)/8 (16-bit integer)
+        wavBuff.putShort((short)BIT_DEPTH);                        // 35 - 36 lil: Bits per sample
         wavBuff.put("data".getBytes(), 0, 4);            // 37 - 40 big: "data" chunk header
         wavBuff.putInt(dataLengthBytes);                               // 41 - 44 lil: File size (data)
 
@@ -186,10 +144,12 @@ public class Binaural {
     }
 
     private static ByteBuffer condenseBuffers(){
-        ByteBuffer buff = ByteBuffer.allocate(numSamples*numChannels*bitDepth/8);
-        buff.a
-        for (int i = 0; i < numSamples; i++){
+        ByteBuffer buff = ByteBuffer.allocate(numSamples*NUM_CHANNELS*BIT_DEPTH/8);
 
+
+        for (int i = 0; i < numSamples; i++){
+            short rightSample = (short)rightChannel[i];
+            short leftSample = (short)leftChannel[i];
         }
     }
 
