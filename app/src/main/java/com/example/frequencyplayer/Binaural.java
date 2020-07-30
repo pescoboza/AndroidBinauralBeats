@@ -1,5 +1,7 @@
 package com.example.frequencyplayer;
 
+import android.util.Log;
+
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -84,8 +86,8 @@ public class Binaural {
             return;
         }
 
-        // Create vectors to grow as needed per loop
-        int newChannelSize = numLoops*numSamples;
+        int minSampleSize = Math.min(rightTemp.length, leftTemp.length);
+        int newChannelSize = numLoops*minSampleSize;
         rightChannel = new short[newChannelSize];
         leftChannel = new short[newChannelSize];
 
@@ -93,7 +95,9 @@ public class Binaural {
         for (int loopNum = 1; loopNum <= numLoops; loopNum++){
 
             // For each sample
-            for (int i = 0; i < rightTemp.length; i++){
+            for (int i = 0; i < minSampleSize; i++){
+                Log.d("for loop debug", "loopNum: " + loopNum + "  i: " + i);
+
                 rightChannel[loopNum*i] = rightTemp[i];
                 leftChannel[loopNum*i] = leftTemp[i];
             }
