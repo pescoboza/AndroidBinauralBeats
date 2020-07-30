@@ -53,7 +53,6 @@ public class Binaural {
         Binaural.sampleDurationMs = ms;
     }
 
-
     private static short[] createSinWaveBuffer(double frequency, double shiftDeg) {
         double shiftRad = Math.toRadians(shiftDeg);
         int numSamplesPerPeriod = (int)(SAMPLE_RATE / frequency);
@@ -104,47 +103,6 @@ public class Binaural {
         isBuffersFull = true;
     }
 
-    private static ByteBuffer generateWavBuffer(ByteBuffer dataSrc, int numData){
-
-        // Validate numData
-        if (numData <= 0){
-            throw new IllegalArgumentException("numData must be positive.");
-        }
-
-        // Get the file length in bytes
-        final int LENGTH_OF_FORMAT_DATA = 16;
-        final int HEADER_LENGTH_BYTES = 44;
-        int dataLengthBytes = numData*BIT_DEPTH/8;
-        int fileLength = HEADER_LENGTH_BYTES + dataLengthBytes;
-
-        // Preallocate for the length of the file
-        ByteBuffer wavBuff = ByteBuffer.allocate(HEADER_LENGTH_BYTES + dataLengthBytes);
-
-        // Create WAV file header
-
-        wavBuff.put("RIFF".getBytes(), 0 ,4);            //  1 -  4 big: "RIFF"
-        wavBuff.putInt(fileLength);                                    //  5 -  8 lil: Size of the overall file - 8 bytes, in bytes (32-bit integer)
-        wavBuff.put("WAVE".getBytes(), 0, 4);            //  9 - 12 big: File type header: "WAVE"
-        wavBuff.put("fmt\0".getBytes(),0,4);             // 13 - 16 big: Format chunk marker: "fmt\0" (with trailing null)
-        wavBuff.putInt(LENGTH_OF_FORMAT_DATA);                         // 17 - 20 lil: Length of fmt chunk 1, always 16 (32-bit integer)
-        wavBuff.putShort((short)1);                                    // 21 - 22 lil: Audio format (1 is PCM) (16-bit integer)
-        wavBuff.putShort((short)NUM_CHANNELS);                          // 23 - 24 lil: Number of channels (16-bit integer)
-        wavBuff.putInt(SAMPLE_RATE);                                    // 25 - 28 lil: Sample rate (32-bit integer)
-        wavBuff.putInt((int)(SAMPLE_RATE*BIT_DEPTH*NUM_CHANNELS/8)); // 29 - 32 lil: Byte rate: (sampleRate*bitsPerSample*numChannels)/8 (32-bit integer)
-        wavBuff.putShort((short)(BIT_DEPTH*NUM_CHANNELS));          // 33 - 34 lil: Block align: (bitsPerSample*numChannels)/8 (16-bit integer)
-        wavBuff.putShort((short)BIT_DEPTH);                        // 35 - 36 lil: Bits per sample
-        wavBuff.put("data".getBytes(), 0, 4);            // 37 - 40 big: "data" chunk header
-        wavBuff.putInt(dataLengthBytes);                               // 41 - 44 lil: File size (data)
-
-
-        // Append the byte data to the wav header
-        byte[] temp = new byte[dataLengthBytes];
-        dataSrc.get(temp);
-        wavBuff.put(temp);
-
-        return wavBuff;
-    }
-
     private static ByteBuffer condenseBuffers(){
         if (!isBuffersFull){
             throw new IllegalStateException("Audio data buffers must be filled first.");
@@ -166,15 +124,52 @@ public class Binaural {
     }
 
 
+    private static ByteBuffer generateWavBuffer(){
+
+        // Get the file length in bytes
+        final int LENGTH_OF_FORMAT_DATA = 16;
+        final int HEADER_LENGTH_BYTES = 44;
+        int dataLengthBytes = numSamples*NUM_CHANNELS*BIT_DEPTH/8;
+        int fileLength = HEADER_LENGTH_BYTES + dataLengthBytes;
+
+        // Preallocate for the length of the file
+        ByteBuffer wavBuff = ByteBuffer.allocate(HEADER_LENGTH_BYTES + dataLengthBytes);
+
+        // Create WAV file header
+
+        wavBuff.put("RIFF".getBytes(), 0 ,4);            //  1 -  4 big: "RIFF"
+        wavBuff.putInt(fileLength);                                    //  5 -  8 lil: Size of the overall file - 8 bytes, in bytes (32-bit integer)
+        wavBuff.put("WAVE".getBytes(), 0, 4);            //  9 - 12 big: File type header: "WAVE"
+        wavBuff.put("fmt\0".getBytes(),0,4);             // 13 - 16 big: Format chunk marker: "fmt\0" (with trailing null)
+        wavBuff.putInt(LENGTH_OF_FORMAT_DATA);                         // 17 - 20 lil: Length of fmt chunk 1, always 16 (32-bit integer)
+        wavBuff.putShort((short)1);                                    // 21 - 22 lil: Audio format (1 is PCM) (16-bit integer)
+        wavBuff.putShort((short)NUM_CHANNELS);                         // 23 - 24 lil: Number of channels (16-bit integer)
+        wavBuff.putInt(SAMPLE_RATE);                                   // 25 - 28 lil: Sample rate (32-bit integer)
+        wavBuff.putInt((int)(SAMPLE_RATE*BIT_DEPTH*NUM_CHANNELS/8));   // 29 - 32 lil: Byte rate: (sampleRate*bitsPerSample*numChannels)/8 (32-bit integer)
+        wavBuff.putShort((short)(BIT_DEPTH*NUM_CHANNELS));             // 33 - 34 lil: Block align: (bitsPerSample*numChannels)/8 (16-bit integer)
+        wavBuff.putShort((short)BIT_DEPTH);                            // 35 - 36 lil: Bits per sample
+        wavBuff.put("data".getBytes(), 0, 4);            // 37 - 40 big: "data" chunk header
+        wavBuff.putInt(dataLengthBytes);                               // 41 - 44 lil: File size (data)
+
+
+        // Append the byte data to the wav header
+        byte[] temp = new byte[dataLengthBytes];
+        ByteBuffer condensedChannels = condenseBuffers();
+        condensedChannels.position(0);
+        condensedChannels.get(temp);
+        wavBuff.put(temp);
+
+        return wavBuff;
+    }
+
+
     // ByteBuffer dataSrc, int numData, short numChannels, int sampleRate, int bitsPerSample
     public static void writeWaveFile(String fileName){
         if (!isBuffersFull){
             throw new IllegalStateException("Audio data buffers must be generated first.");
         }
 
-
-        ByteBuffer condensedChannels = condenseBuffers();
-        ByteBuffer wavBuffer = generateWavBuffer(condensedChannels, numSamples);
+        ByteBuffer wavBuffer = generateWavBuffer();
 
         try {
             final FileOutputStream fos = new FileOutputStream(fileName);
@@ -184,5 +179,6 @@ public class Binaural {
             e.printStackTrace();
             System.err.println("FileIO Error. Please contact the developer.");
         }
+
     }
 }
