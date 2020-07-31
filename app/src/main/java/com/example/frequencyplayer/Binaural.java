@@ -1,16 +1,12 @@
 package com.example.frequencyplayer;
 
 import android.content.Context;
-import android.os.FileUtils;
 import android.util.Log;
-import android.util.Pair;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -122,8 +118,8 @@ public class Binaural {
             throw new IllegalStateException("Audio data buffers must be filled first.");
         }
 
-        ByteBuffer buff = ByteBuffer.allocate(numSamples*NUM_CHANNELS*BIT_DEPTH/8);
-        for (int i = 0; i < numSamples; i++){
+        ByteBuffer buff = ByteBuffer.allocate(channelLength*NUM_CHANNELS*BIT_DEPTH/8);
+        for (int i = 0; i < channelLength; i++){
             buff.putShort(rightChannel[i]);
             buff.putShort(leftChannel[i]);
         }
@@ -133,7 +129,7 @@ public class Binaural {
     public static void clearBuffers(){
         rightChannel = null;
         leftChannel = null;
-        numSamples = 0;
+        channelLength = 0;
         isBuffersFull = false;
     }
 
