@@ -97,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void bt_play_onClick(View view) {
 
+
         // Get the string from the EditText objects
         String frequencyStr = et_frequency.getText().toString();
         String beatStr = et_beat.getText().toString();
@@ -108,26 +109,37 @@ public class MainActivity extends AppCompatActivity {
         Pair<Double, Boolean> shiftVal = validateValue(shiftStr);
 
         // Use default values for invalid inputs
-        double frequency =  frequencyVal.second ? frequencyVal.first: DEFAULT_FREQUENCY;
-        double beat = beatVal.second ? beatVal.first : DEFAULT_BEAT;
-        double shift = shiftVal.second ? shiftVal.first : DEFAULT_SHIFT;
+        final double frequency = frequencyVal.second ? frequencyVal.first : DEFAULT_FREQUENCY;
+        final double beat = beatVal.second ? beatVal.first : DEFAULT_BEAT;
+        final double shift = shiftVal.second ? shiftVal.first : DEFAULT_SHIFT;
 
         // Debug logging info
-        Log.d("inputDebugger",String.format("Frequency: %.5f Beat: %.5f Shift: %.5f", frequency, beat, shift));
+        Log.d("inputDebugger", String.format("Frequency: %.5f Beat: %.5f Shift: %.5f", frequency, beat, shift));
 
-        // Generate the wav audio buffers
-        Binaural.generateBuffers(frequency, beat, shift, LOOPED_SAMPLE_DURATION);
+        // Create runnable process for multithreading
+        Runnable composeAndPlay = new Runnable() {
+            @Override
+            public void run() {
 
-        // Create a .wav file from the PCM data
-        Binaural.writeWaveFile(CUSTOM_CLIP_NAME + ".wav");
+                // Generate the wav audio buffers
+                Binaural.generateBuffers(frequency, beat, shift, LOOPED_SAMPLE_DURATION);
 
-        // Load the .wav file into the SoundPool
-        customSoundId = soundPool.load(CUSTOM_CLIP_NAME, MAX_STREAMS);
+                // Create a .wav file from the PCM data
+                Binaural.writeWaveFile(CUSTOM_CLIP_NAME + ".wav");
 
-        // Play the sound in a loop
-        customSoundStreamId = soundPool.play(customSoundId, 1, 1,MAX_STREAMS, -1, 1);
+                // Load the .wav file into the SoundPool
+                customSoundId = soundPool.load(CUSTOM_CLIP_NAME, MAX_STREAMS);
 
-        Log.d("app activity", "*PLAY*");
+                // Play the sound in a loop
+                customSoundStreamId = soundPool.play(customSoundId, 1, 1, MAX_STREAMS, -1, 1);
+
+                Log.d("app activity", "*PLAY*");
+            }
+        };
+
+        Thread thread = new Thread(composeAndPlay);
+        thread.start();
+
     }
 
     public void bt_default_onClick(View view) {
