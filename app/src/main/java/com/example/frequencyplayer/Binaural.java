@@ -51,13 +51,12 @@ public class Binaural {
     // Data buffers
     private static short[] rightChannel;
     private static short[] leftChannel;
-    private static int numSamples = 0;
+    private static int channelLength = 0; // Number of samples per channel
     private static boolean isBuffersFull = false;
 
     // Remembered values to avoid unnecessary buffer generation
     private static double lastFrequency;
     private static double lastBeat;
-    private static double lastShift;
     private static double lastShiftDeg;
     private static int lastNumLoops;
 
@@ -106,9 +105,9 @@ public class Binaural {
 
         // Repeat the period the needed number of times to fill the total sample size, cutting
         // the excess of the the longest one to make both match
-        int repeatedPeriodSize = numLoops * Math.min(rightOnePeriod.length, leftOnePeriod.length);
-        rightChannel = Util.concatTillLength(rightOnePeriod, repeatedPeriodSize);
-        leftChannel = Util.concatTillLength(leftOnePeriod, repeatedPeriodSize);
+        channelLength =  numLoops * Math.min(rightOnePeriod.length, leftOnePeriod.length);
+        rightChannel = Util.concatTillLength(rightOnePeriod, channelLength);
+        leftChannel = Util.concatTillLength(leftOnePeriod, channelLength);
 
         // Set the remembered values to the provided ones
         isBuffersFull = true;
