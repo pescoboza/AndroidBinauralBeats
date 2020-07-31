@@ -54,17 +54,10 @@ public class Binaural {
     private static int lastNumLoops;
 
     // Creates an audio buffer with a single period of sine.
-    private static short[] createSinWavePeriod(int outputBuffSize, double frequency, double shiftDeg) {
-        if (outputBuffSize < 1){
-            throw new IllegalArgumentException("outputBuffSize must be at least 1.");
-        }
+    private static short[] createSinWavePeriod( double frequency, double shiftDeg) {
 
         double shiftRad = Math.toRadians(shiftDeg);
         int numSamplesPerPeriod = (int)(SAMPLE_RATE / frequency);
-        if (numSamplesPerPeriod > outputBuffSize){
-            throw new IllegalArgumentException("outputBuffSize must be at least as long as the samples needed for one period.");
-        }
-
 
         short[] buffer = new short[numSamplesPerPeriod];
 
@@ -103,35 +96,11 @@ public class Binaural {
         short[] rightOnePeriod = createSinWavePeriod(frequency, 0.0);
         short[] leftOnePeriod = createSinWavePeriod(frequency + beat, shiftDeg);
 
-        // The channels have different frequencies due to the beat value, thus they also have
-        // different period length and both arrays have different lengths.
-        int minSampleSize = Math.min(rightOnePeriod.length, leftOnePeriod.length);
-        boolean isRightMin = rightOnePeriod.length == minSampleSize;
-
-        // If there is only one loop, we're done
-        if (numLoops == 1) {
-            rightChannel = rightOnePeriod;
-            leftChannel = leftOnePeriod;
-
-        }else {
-
-
-            int newChannelSize = numLoops * minSampleSize;
-            rightChannel = new short[newChannelSize];
-            leftChannel = new short[newChannelSize];
-
-            // For each loop
-            for (int loopNum = 1; loopNum <= numLoops; loopNum++) {
-
-                // For each sample
-                for (int i = 0; i < minSampleSize; i++) {
-                    //Log.d("for loop debug", "loopNum: " + loopNum + "  i: " + i);
-                    rightChannel[loopNum * i] = rightTemp[i];
-                    leftChannel[loopNum * i] = leftTemp[i];
-                }
-            }
-
-        }
+        // Repeat the period the needed number of times to fill the total sample size, cutting
+        // the excess of the the longest one to make both match
+        int repeatedPeriodSize = numLoops * Math.min(rightOnePeriod.length, leftOnePeriod.length);
+        rightChannel = Util.concatTillLength(rightOnePeriod, repeatedPeriodSize);
+        leftChannel = Util.concatTillLength(leftOnePeriod, repeatedPeriodSize);
 
         // Set the remembered values to the provided ones
         isBuffersFull = true;
