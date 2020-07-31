@@ -18,6 +18,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import java.io.File;
+
 // TODO: Figure out file storage and loading.
 public class MainActivity extends AppCompatActivity {
 
@@ -115,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
         final double shift = shiftVal.second ? shiftVal.first : DEFAULT_SHIFT;
 
         // Debug logging info
-        Log.d("inputDebugger", String.format("Frequency: %.5f Beat: %.5f Shift: %.5f", frequency, beat, shift));
+        Log.d("appActivity", String.format("Frequency: %.5f Beat: %.5f Shift: %.5f", frequency, beat, shift));
 
         // Create runnable process for multithreading
         Runnable composeAndPlay = new Runnable() {
@@ -127,15 +129,16 @@ public class MainActivity extends AppCompatActivity {
 
                 // Create a .wav file from the PCM data
                 Context context = getApplicationContext();
-                Binaural.writeWaveFile(CUSTOM_CLIP_BASENAME, context);
+                File wavFile = Binaural.writeWaveFile(CUSTOM_CLIP_BASENAME, context);
 
                 // Load the .wav file into the SoundPool
-                customSoundId = soundPool.load(CUSTOM_CLIP_BASENAME, MAX_STREAMS);
+                Log.d("appActivity", "Loading file \""+ wavFile.getAbsolutePath() + "\".");
+                customSoundId = soundPool.load(wavFile.getAbsolutePath() ,1);
 
                 // Play the sound in a loop
                 customSoundStreamId = soundPool.play(customSoundId, 1, 1, MAX_STREAMS, -1, 1);
 
-                Log.d("app activity", "*PLAY*");
+                Log.d("appActivity", "*PLAY*");
             }
         };
 
@@ -153,12 +156,12 @@ public class MainActivity extends AppCompatActivity {
         et_beat.setText(String.valueOf(DEFAULT_BEAT));
         et_shift.setText(String.valueOf(DEFAULT_SHIFT));
 
-        Log.d("app activity", "*RESET*");
+        Log.d("appActivity", "*RESET*");
     }
 
     private static void stopSound(){
         soundPool.stop(customSoundStreamId);
-        Log.d("app activity", "*STOP*");
+        Log.d("appActivity", "*STOP*");
     }
 
     public void bt_stop_onClick(View view) {

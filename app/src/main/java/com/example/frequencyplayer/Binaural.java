@@ -22,7 +22,7 @@ public class Binaural {
     public static final int SAMPLE_RATE = 44100;
     public static final short BIT_DEPTH = 16;
     public static final short NUM_CHANNELS = 2;
-    private static final String FILE_EXTENSION = ".wav";
+    public static final String FILE_EXTENSION = ".wav";
 
     // Caduceus frequencies in Hz with integer exponents [185, 201].
     public final static Map<Integer, Double> CADUCEUS_FREQUENCIES =  new HashMap<Integer, Double>(){{
