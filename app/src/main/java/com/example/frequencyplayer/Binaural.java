@@ -139,7 +139,7 @@ public class Binaural {
         // Get the file length in bytes
         final int LENGTH_OF_FORMAT_DATA = 16;
         final int HEADER_LENGTH_BYTES = 44;
-        int dataLengthBytes = numSamples*NUM_CHANNELS*BIT_DEPTH/8;
+        int dataLengthBytes = channelLength*NUM_CHANNELS*BIT_DEPTH/8;
         int fileLength = HEADER_LENGTH_BYTES + dataLengthBytes;
 
         // Preallocate for the length of the file
@@ -162,13 +162,9 @@ public class Binaural {
 
 
         // Append the byte data to the wav header
-        {
-            byte[] temp = new byte[dataLengthBytes];
-            ByteBuffer condensedChannels = condenseBuffers();
-            condensedChannels.position(0);
-            condensedChannels.get(temp);
-            wavBuff.put(temp);
-        }
+        ByteBuffer condensedChannels = condenseBuffers();
+        wavBuff.put(condensedChannels.array());
+
         return wavBuff;
     }
 
