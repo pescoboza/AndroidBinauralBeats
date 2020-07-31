@@ -46,10 +46,25 @@ public class Binaural {
     private static int numSamples = 0;
     private static boolean isBuffersFull = false;
 
+    // Remembered values to avoid unnecessary buffer generation
+    private static double lastFrequency;
+    private static double lastBeat;
+    private static double lastShift;
+    private static double lastShiftDeg;
+    private static int lastNumLoops;
+
     // Creates an audio buffer with a single period of sine.
-    private static short[] createSinWaveBuffer(double frequency, double shiftDeg) {
+    private static short[] createSinWavePeriod(int outputBuffSize, double frequency, double shiftDeg) {
+        if (outputBuffSize < 1){
+            throw new IllegalArgumentException("outputBuffSize must be at least 1.");
+        }
+
         double shiftRad = Math.toRadians(shiftDeg);
         int numSamplesPerPeriod = (int)(SAMPLE_RATE / frequency);
+        if (numSamplesPerPeriod > outputBuffSize){
+            throw new IllegalArgumentException("outputBuffSize must be at least as long as the samples needed for one period.");
+        }
+
 
         short[] buffer = new short[numSamplesPerPeriod];
 
@@ -67,6 +82,16 @@ public class Binaural {
 
     // Fills internal buffers with a single period of frequency repeated n times.
     public static void generateBuffers(double frequency, double beat, double shiftDeg, int numLoops){
+        // Return early if the buffers are already full with the exact same parameters
+        if (isBuffersFull &&
+                frequency == lastFrequency &&
+                beat == lastBeat &&
+                shiftDeg == lastShiftDeg &&
+                numLoops == lastNumLoops){
+            Log.d("binaural", "Buffers already generated with the same parameters.");
+            return;
+        }
+
         if (numLoops <= 0){
             throw new IllegalArgumentException("Number of loops must me positive.");
         }
@@ -74,36 +99,46 @@ public class Binaural {
         // Clear the current data buffers
         clearBuffers();
 
-        // Create buffers for the raw data
-        short[] rightTemp = createSinWaveBuffer(frequency, 0.0);
-        short[] leftTemp = createSinWaveBuffer(frequency + beat, shiftDeg);
+        // Create buffers for the raw data of a single period
+        short[] rightOnePeriod = createSinWavePeriod(frequency, 0.0);
+        short[] leftOnePeriod = createSinWavePeriod(frequency + beat, shiftDeg);
+
+        // The channels have different frequencies due to the beat value, thus they also have
+        // different period length and both arrays have different lengths.
+        int minSampleSize = Math.min(rightOnePeriod.length, leftOnePeriod.length);
+        boolean isRightMin = rightOnePeriod.length == minSampleSize;
 
         // If there is only one loop, we're done
         if (numLoops == 1) {
-            rightChannel = rightTemp;
-            leftChannel = leftTemp;
-            isBuffersFull = true;
-            return;
-        }
+            rightChannel = rightOnePeriod;
+            leftChannel = leftOnePeriod;
 
-        int minSampleSize = Math.min(rightTemp.length, leftTemp.length);
-        int newChannelSize = numLoops*minSampleSize;
-        rightChannel = new short[newChannelSize];
-        leftChannel = new short[newChannelSize];
+        }else {
 
-        // For each loop
-        for (int loopNum = 1; loopNum <= numLoops; loopNum++){
 
-            // For each sample
-            for (int i = 0; i < minSampleSize; i++){
-                //Log.d("for loop debug", "loopNum: " + loopNum + "  i: " + i);
+            int newChannelSize = numLoops * minSampleSize;
+            rightChannel = new short[newChannelSize];
+            leftChannel = new short[newChannelSize];
 
-                rightChannel[loopNum*i] = rightTemp[i];
-                leftChannel[loopNum*i] = leftTemp[i];
+            // For each loop
+            for (int loopNum = 1; loopNum <= numLoops; loopNum++) {
+
+                // For each sample
+                for (int i = 0; i < minSampleSize; i++) {
+                    //Log.d("for loop debug", "loopNum: " + loopNum + "  i: " + i);
+                    rightChannel[loopNum * i] = rightTemp[i];
+                    leftChannel[loopNum * i] = leftTemp[i];
+                }
             }
+
         }
 
+        // Set the remembered values to the provided ones
         isBuffersFull = true;
+        lastFrequency = frequency;
+        lastBeat = beat;
+        lastShiftDeg = shiftDeg;
+        lastNumLoops = numLoops;
     }
 
     private static ByteBuffer condenseBuffers(){
