@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -177,15 +178,19 @@ public class Binaural {
     }
 
 
-    // Writes the wav file into cache.
+    // Writes the wav file into cache and returns the absolute path.
     public static File writeWaveFile(String baseName, Context context){
         if (!isBuffersFull){
             throw new IllegalStateException("Audio data buffers must be generated first.");
         }
 
+        ByteBuffer dataBuffer = generateWavBuffer();
         File outputFile = null;
         try{
             outputFile = File.createTempFile(baseName, FILE_EXTENSION, context.getCacheDir());
+            FileOutputStream fos = new FileOutputStream(outputFile.getAbsolutePath());
+            fos.write(dataBuffer.array());
+            fos.close();
             Log.d("binarual", String.format("Created cache file \"%s%s\".", baseName, FILE_EXTENSION));
         }catch (IOException e){
             e.printStackTrace();
