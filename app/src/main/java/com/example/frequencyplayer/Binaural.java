@@ -178,6 +178,7 @@ public class Binaural {
         ByteBuffer dataBuffer = generateWavBuffer();
         File outputFile = null;
         try{
+            // TODO: Figure out if the file is written with the correct endianess and test it.
             outputFile = File.createTempFile(baseName, FILE_EXTENSION, context.getCacheDir());
             FileOutputStream fos = new FileOutputStream(outputFile.getAbsolutePath());
             fos.write(dataBuffer.array());
