@@ -2,6 +2,7 @@ package com.example.frequencyplayer;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -25,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private static final double DEFAULT_SHIFT = 180.0;
     private static final double DEFAULT_FREQUENCY = Binaural.CADUCEUS_FREQUENCIES.get(196); // 49.96882653 Hz
 
-    private static final String CUSTOM_CLIP_NAME = "custom";
+    private static final String CUSTOM_CLIP_BASENAME = "custom";
     private static final double LOOPED_SAMPLE_DURATION = 1.61803;
     private static final int MAX_STREAMS = 6;
     private static final int SAMPLE_RATE = Binaural.SAMPLE_RATE;
@@ -125,10 +126,11 @@ public class MainActivity extends AppCompatActivity {
                 Binaural.generateBuffers(frequency, beat, shift, LOOPED_SAMPLE_DURATION);
 
                 // Create a .wav file from the PCM data
-                Binaural.writeWaveFile(CUSTOM_CLIP_NAME + ".wav");
+                Context context = getApplicationContext();
+                Binaural.writeWaveFile(CUSTOM_CLIP_BASENAME, context);
 
                 // Load the .wav file into the SoundPool
-                customSoundId = soundPool.load(CUSTOM_CLIP_NAME, MAX_STREAMS);
+                customSoundId = soundPool.load(CUSTOM_CLIP_BASENAME, MAX_STREAMS);
 
                 // Play the sound in a loop
                 customSoundStreamId = soundPool.play(customSoundId, 1, 1, MAX_STREAMS, -1, 1);

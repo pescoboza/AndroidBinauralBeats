@@ -1,8 +1,14 @@
 package com.example.frequencyplayer;
 
+import android.content.Context;
+import android.os.FileUtils;
 import android.util.Log;
+import android.util.Pair;
 
+import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +22,7 @@ public class Binaural {
     public static final int SAMPLE_RATE = 44100;
     public static final short BIT_DEPTH = 16;
     public static final short NUM_CHANNELS = 2;
+    private static final String FILE_EXTENSION = ".wav";
 
     // Caduceus frequencies in Hz with integer exponents [185, 201].
     public final static Map<Integer, Double> CADUCEUS_FREQUENCIES =  new HashMap<Integer, Double>(){{
@@ -170,22 +177,21 @@ public class Binaural {
     }
 
 
-    // ByteBuffer dataSrc, int numData, short numChannels, int sampleRate, int bitsPerSample
-    public static void writeWaveFile(String fileName){
+    // Writes the wav file into cache.
+    public static File writeWaveFile(String baseName, Context context){
         if (!isBuffersFull){
             throw new IllegalStateException("Audio data buffers must be generated first.");
         }
 
-        ByteBuffer wavBuffer = generateWavBuffer();
-
-        try {
-            final FileOutputStream fos = new FileOutputStream(fileName);
-            fos.write(wavBuffer.array());
-            fos.close();
-        }catch(Exception e){
+        File outputFile = null;
+        try{
+            outputFile = File.createTempFile(baseName, FILE_EXTENSION, context.getCacheDir());
+            Log.d("binarual", String.format("Created cache file \"%s%s\".", baseName, FILE_EXTENSION));
+        }catch (IOException e){
             e.printStackTrace();
-            System.err.println("FileIO Error. Please contact the developer.");
+            Log.d("binarual", String.format("Error creating cache \"file %s%s\".", baseName, FILE_EXTENSION));
         }
 
+        return outputFile;
     }
 }
