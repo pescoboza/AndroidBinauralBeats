@@ -46,8 +46,7 @@ public class Binaural {
 
 
     // Data buffers
-    private static short[] rightChannel;
-    private static short[] leftChannel;
+    private static int[][] channelsData;
     private static int channelLength = 0; // Number of samples per channel
     private static boolean isBuffersFull = false;
 
@@ -58,12 +57,12 @@ public class Binaural {
     private static int lastNumLoops;
 
     // Creates an audio buffer with a single period of sine.
-    private static short[] createSinWavePeriod( double frequency, double shiftDeg) {
+    private static int[] createSinWavePeriod( double frequency, double shiftDeg) {
 
         double shiftRad = Math.toRadians(shiftDeg);
         int numSamplesPerPeriod = (int)(SAMPLE_RATE / frequency);
 
-        short[] buffer = new short[numSamplesPerPeriod];
+        int[] buffer = new int[numSamplesPerPeriod];
 
         for (int i = 0; i< numSamplesPerPeriod; i++) {
             double angle = 2.0*Math.PI*i/numSamplesPerPeriod;
@@ -97,14 +96,14 @@ public class Binaural {
         clearBuffers();
 
         // Create buffers for the raw data of a single period
-        short[] rightOnePeriod = createSinWavePeriod(frequency, 0.0);
-        short[] leftOnePeriod = createSinWavePeriod(frequency + beat, shiftDeg);
+        int[] rightOnePeriod = createSinWavePeriod(frequency, 0.0);
+        int[] leftOnePeriod = createSinWavePeriod(frequency + beat, shiftDeg);
 
         // Repeat the period the needed number of times to fill the total sample size, cutting
         // the excess of the the longest one to make both match
         channelLength =  numLoops * Math.min(rightOnePeriod.length, leftOnePeriod.length);
-        rightChannel = Util.concatTillLength(rightOnePeriod, channelLength);
-        leftChannel = Util.concatTillLength(leftOnePeriod, channelLength);
+        channelsData[0] = Util.concatTillLength(rightOnePeriod, channelLength);
+        channelsData[1] = Util.concatTillLength(leftOnePeriod, channelLength);
 
         // Set the remembered values to the provided ones
         isBuffersFull = true;
@@ -114,78 +113,10 @@ public class Binaural {
         lastNumLoops = numLoops;
     }
 
-    private static ByteBuffer condenseBuffers(){
-        if (!isBuffersFull){
-            throw new IllegalStateException("Audio data buffers must be filled first.");
-        }
-
-        ByteBuffer buff = ByteBuffer.allocate(channelLength*NUM_CHANNELS*BIT_DEPTH/8);
-        for (int i = 0; i < channelLength; i++){
-            buff.putShort(rightChannel[i]);
-            buff.putShort(leftChannel[i]);
-        }
-        return buff;
-    }
-
     public static void clearBuffers(){
-        rightChannel = null;
-        leftChannel = null;
+        channelsData = null;
         channelLength = 0;
         isBuffersFull = false;
-    }
-
-
-    private static ByteBuffer generateWavBuffer(){
-
-        // Get the file length in bytes
-        final int LENGTH_OF_FORMAT_DATA = 16;
-        final int HEADER_LENGTH_BYTES = 44;
-        int dataLengthBytes = channelLength*2*NUM_CHANNELS*BIT_DEPTH/8; // Times 2 because samples are in short, which are double the bytes
-        int fileLength = HEADER_LENGTH_BYTES + dataLengthBytes;
-
-        // Preallocate for the length of the file
-        ByteBuffer wavBuff = ByteBuffer.allocate(fileLength);
-
-        // Create WAV file header
-        wavBuff.order(ByteOrder.BIG_ENDIAN);                           // BigEndian
-
-        wavBuff.put("RIFF".getBytes(), 0 ,4);            //  1 -  4 big: "RIFF"
-
-        wavBuff.order(ByteOrder.LITTLE_ENDIAN);                        // LittleEndian
-
-        wavBuff.putInt(fileLength-8);                                  //  5 -  8 lil: Size of the overall file minus 8 bytes, in bytes (32-bit integer)
-
-        wavBuff.order(ByteOrder.BIG_ENDIAN);                           // BigEndian
-
-        wavBuff.put("WAVE".getBytes(), 0, 4);            //  9 - 12 big: File type header: "WAVE"
-        wavBuff.put("fmt\0".getBytes(),0,4);             // 13 - 16 big: Format chunk marker: "fmt\0" (with trailing null)
-
-        wavBuff.order(ByteOrder.LITTLE_ENDIAN);                        // LittleEndian
-
-        wavBuff.putInt(LENGTH_OF_FORMAT_DATA);                         // 17 - 20 lil: Length of fmt chunk 1, always 16 (32-bit integer)
-        wavBuff.putShort((short)1);                                    // 21 - 22 lil: Audio format (1 is PCM) (16-bit integer)
-        wavBuff.putShort((short)NUM_CHANNELS);                         // 23 - 24 lil: Number of channels (16-bit integer)
-        wavBuff.putInt(SAMPLE_RATE);                                   // 25 - 28 lil: Sample rate (32-bit integer)
-        wavBuff.putInt((int)(SAMPLE_RATE*BIT_DEPTH*NUM_CHANNELS/8));   // 29 - 32 lil: Byte rate: (sampleRate*bitsPerSample*numChannels)/8 (32-bit integer)
-        wavBuff.putShort((short)(BIT_DEPTH*NUM_CHANNELS/8));           // 33 - 34 lil: Block align: (bitsPerSample*numChannels)/8 (16-bit integer)
-        wavBuff.putShort((short)BIT_DEPTH);                            // 35 - 36 lil: Bits per sample
-
-        wavBuff.order(ByteOrder.BIG_ENDIAN);                           // BigEndian
-
-        wavBuff.put("data".getBytes(), 0, 4);            // 37 - 40 big: "data" chunk header
-
-        wavBuff.order(ByteOrder.LITTLE_ENDIAN);                        // LittleEndian
-
-        wavBuff.putInt(dataLengthBytes);                               // 41 - 44 lil: File size (data)
-
-        wavBuff.order(ByteOrder.BIG_ENDIAN);                           // BigEndian (default)
-        // Done writing wav file header
-
-        // Append the byte data to the wav header
-        ByteBuffer condensedChannels = condenseBuffers();
-        wavBuff.put(condensedChannels.array());
-
-        return wavBuff;
     }
 
 
@@ -195,20 +126,20 @@ public class Binaural {
             throw new IllegalStateException("Audio data buffers must be generated first.");
         }
 
-        ByteBuffer dataBuffer = generateWavBuffer();
-        File outputFile = null;
         try{
-            // TODO: Figure out if the file is written with the correct endianness and test it.
-            outputFile = File.createTempFile(baseName, FILE_EXTENSION, context.getCacheDir());
-            FileOutputStream fos = new FileOutputStream(outputFile.getAbsolutePath());
-            fos.write(dataBuffer.array());
-            fos.close();
+            File outputFile = File.createTempFile(baseName, FILE_EXTENSION, context.getCacheDir());
+            WavFile wavFile = WavFile.newWavFile(outputFile, NUM_CHANNELS, channelLength, BIT_DEPTH, SAMPLE_RATE);
+            wavFile.writeFrames(channelsData, 0, channelLength);
+            wavFile.close();
             Log.d("binarual", String.format("Created cache file \"%s%s\".", baseName, FILE_EXTENSION));
+            return outputFile;
         }catch (IOException e){
             e.printStackTrace();
             Log.d("binarual", String.format("Error creating cache \"file %s%s\".", baseName, FILE_EXTENSION));
+        }catch (WavFileException e){
+            e.printStackTrace();
+            Log.d("binarual", "WavFile writing error.");
         }
-
-        return outputFile;
+        return null;
     }
 }
