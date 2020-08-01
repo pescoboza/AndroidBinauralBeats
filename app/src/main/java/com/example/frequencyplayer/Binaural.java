@@ -101,7 +101,7 @@ public class Binaural {
         int[] leftOnePeriod = createSinWavePeriod(frequency + beat, shiftDeg);
 
         // Calculate the channel size based on duration and sample rate
-        channelLength =  (int)durationSec*SAMPLE_RATE;
+        channelLength =  (int)(durationSec*SAMPLE_RATE);
         channelsData = new int[NUM_CHANNELS][channelLength];
 
         // Splice the periods to match the desired channel length

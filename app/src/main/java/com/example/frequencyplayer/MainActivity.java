@@ -28,8 +28,8 @@ public class MainActivity extends AppCompatActivity {
     private static final short BIT_DEPTH = Binaural.BIT_DEPTH;
 
     private static SoundPool soundPool;
-    private static AudioRecord audioRecord;
-
+    private static int customSoundId;
+    private static int customSoundStreamId;
     // EditTexts
     private EditText et_frequency;
     private EditText et_beat;
@@ -39,9 +39,6 @@ public class MainActivity extends AppCompatActivity {
     // private Button bt_play;
     // private Button bt_stop;
     // private Button bt_default;
-
-    private static int customSoundId;
-    private static int customSoundStreamId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -128,6 +125,9 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("appActivity", "Loading file \""+ wavFile.getAbsolutePath() + "\".");
                 customSoundId = soundPool.load(wavFile.getAbsolutePath() ,1);
 
+                // Delete the file once it is loaded inside the sound pool
+                if (!wavFile.delete()) throw new RuntimeException("Could not delete cache file.");
+
                 // Play the sound in a loop
                 customSoundStreamId = soundPool.play(customSoundId, 1, 1, MAX_STREAMS, -1, 1);
 
@@ -162,5 +162,6 @@ public class MainActivity extends AppCompatActivity {
     public void bt_stop_onClick(View view) {
         // Make the sound pool go silent
         stopSound();
+        soundPool.unload(customSoundId);
     }
 }
