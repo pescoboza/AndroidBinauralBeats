@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
     private static final double DEFAULT_FREQUENCY = Binaural.CADUCEUS_FREQUENCIES.get(196); // 49.96882653 Hz
 
     private static final String CUSTOM_CLIP_BASENAME = "custom";
-    private static final double LOOPED_SAMPLE_DURATION = 1.61803;
+    private static final double LOOPED_SAMPLE_DURATION = 1618;
     private static final int MAX_STREAMS = 6;
     private static final int SAMPLE_RATE = Binaural.SAMPLE_RATE;
     private static final short BIT_DEPTH = Binaural.BIT_DEPTH;
@@ -140,16 +140,18 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void bt_default_onClick(View view) {
-        // Stop the audio
-        stopSound();
-
+    private void resetDefaultValuesInEditTexts(){
         // Reset the default parameters of the EditText objects
         et_frequency.setText(String.valueOf(DEFAULT_FREQUENCY));
         et_beat.setText(String.valueOf(DEFAULT_BEAT));
         et_shift.setText(String.valueOf(DEFAULT_SHIFT));
-
         Log.d("appActivity", "*RESET*");
+    }
+
+    public void bt_default_onClick(View view) {
+        // Stop the audio
+        stopSound();
+        resetDefaultValuesInEditTexts();
     }
 
     private static void stopSound(){
