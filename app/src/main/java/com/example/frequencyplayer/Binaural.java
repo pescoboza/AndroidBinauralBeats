@@ -11,8 +11,7 @@ import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 
-// Thanks to http://www.topherlee.com/software/pcm-tut-wavformat.html
-// and http://soundfile.sapp.org/doc/WaveFormat/
+// Thanks to http://www.labbookpages.co.uk/audio/javaWavFiles.html
 
 public class Binaural {
 
@@ -21,6 +20,11 @@ public class Binaural {
     public static final short BIT_DEPTH = 16;
     public static final short NUM_CHANNELS = 2;
     public static final String FILE_EXTENSION = ".wav";
+
+    private class ChannelNum{
+        static final int RIGHT = 0;
+        static final short LEFT = 1;
+    }
 
     // Caduceus frequencies in Hz with integer exponents [185, 201].
     public final static Map<Integer, Double> CADUCEUS_FREQUENCIES =  new HashMap<Integer, Double>(){{
@@ -102,8 +106,9 @@ public class Binaural {
         // Repeat the period the needed number of times to fill the total sample size, cutting
         // the excess of the the longest one to make both match
         channelLength =  numLoops * Math.min(rightOnePeriod.length, leftOnePeriod.length);
-        channelsData[0] = Util.concatTillLength(rightOnePeriod, channelLength);
-        channelsData[1] = Util.concatTillLength(leftOnePeriod, channelLength);
+        channelsData = new int[NUM_CHANNELS][channelLength];
+        channelsData[ChannelNum.RIGHT] = Util.concatTillLength(rightOnePeriod, channelLength);
+        channelsData[ChannelNum.LEFT] = Util.concatTillLength(leftOnePeriod, channelLength);
 
         // Set the remembered values to the provided ones
         isBuffersFull = true;
