@@ -144,7 +144,7 @@ public class Binaural {
         int fileLength = HEADER_LENGTH_BYTES + dataLengthBytes;
 
         // Preallocate for the length of the file
-        ByteBuffer wavBuff = ByteBuffer.allocate(HEADER_LENGTH_BYTES + dataLengthBytes);
+        ByteBuffer wavBuff = ByteBuffer.allocate(fileLength);
 
         // Create WAV file header
         wavBuff.order(ByteOrder.BIG_ENDIAN);                           // BigEndian
@@ -153,7 +153,7 @@ public class Binaural {
 
         wavBuff.order(ByteOrder.LITTLE_ENDIAN);                        // LittleEndian
 
-        wavBuff.putInt(fileLength);                                    //  5 -  8 lil: Size of the overall file - 8 bytes, in bytes (32-bit integer)
+        wavBuff.putInt(fileLength-8);                                  //  5 -  8 lil: Size of the overall file minus 8 bytes, in bytes (32-bit integer)
 
         wavBuff.order(ByteOrder.BIG_ENDIAN);                           // BigEndian
 
@@ -167,7 +167,7 @@ public class Binaural {
         wavBuff.putShort((short)NUM_CHANNELS);                         // 23 - 24 lil: Number of channels (16-bit integer)
         wavBuff.putInt(SAMPLE_RATE);                                   // 25 - 28 lil: Sample rate (32-bit integer)
         wavBuff.putInt((int)(SAMPLE_RATE*BIT_DEPTH*NUM_CHANNELS/8));   // 29 - 32 lil: Byte rate: (sampleRate*bitsPerSample*numChannels)/8 (32-bit integer)
-        wavBuff.putShort((short)(BIT_DEPTH*NUM_CHANNELS));             // 33 - 34 lil: Block align: (bitsPerSample*numChannels)/8 (16-bit integer)
+        wavBuff.putShort((short)(BIT_DEPTH*NUM_CHANNELS/8));             // 33 - 34 lil: Block align: (bitsPerSample*numChannels)/8 (16-bit integer)
         wavBuff.putShort((short)BIT_DEPTH);                            // 35 - 36 lil: Bits per sample
 
         wavBuff.order(ByteOrder.BIG_ENDIAN);                           // BigEndian
@@ -198,7 +198,7 @@ public class Binaural {
         ByteBuffer dataBuffer = generateWavBuffer();
         File outputFile = null;
         try{
-            // TODO: Figure out if the file is written with the correct endianess and test it.
+            // TODO: Figure out if the file is written with the correct endianness and test it.
             outputFile = File.createTempFile(baseName, FILE_EXTENSION, context.getCacheDir());
             FileOutputStream fos = new FileOutputStream(outputFile.getAbsolutePath());
             fos.write(dataBuffer.array());
