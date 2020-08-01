@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -146,10 +147,21 @@ public class Binaural {
         ByteBuffer wavBuff = ByteBuffer.allocate(HEADER_LENGTH_BYTES + dataLengthBytes);
 
         // Create WAV file header
+        wavBuff.order(ByteOrder.BIG_ENDIAN);                           // BigEndian
+
         wavBuff.put("RIFF".getBytes(), 0 ,4);            //  1 -  4 big: "RIFF"
+
+        wavBuff.order(ByteOrder.LITTLE_ENDIAN);                        // LittleEndian
+
         wavBuff.putInt(fileLength);                                    //  5 -  8 lil: Size of the overall file - 8 bytes, in bytes (32-bit integer)
+
+        wavBuff.order(ByteOrder.BIG_ENDIAN);                           // BigEndian
+
         wavBuff.put("WAVE".getBytes(), 0, 4);            //  9 - 12 big: File type header: "WAVE"
         wavBuff.put("fmt\0".getBytes(),0,4);             // 13 - 16 big: Format chunk marker: "fmt\0" (with trailing null)
+
+        wavBuff.order(ByteOrder.LITTLE_ENDIAN);                        // LittleEndian
+
         wavBuff.putInt(LENGTH_OF_FORMAT_DATA);                         // 17 - 20 lil: Length of fmt chunk 1, always 16 (32-bit integer)
         wavBuff.putShort((short)1);                                    // 21 - 22 lil: Audio format (1 is PCM) (16-bit integer)
         wavBuff.putShort((short)NUM_CHANNELS);                         // 23 - 24 lil: Number of channels (16-bit integer)
@@ -157,9 +169,17 @@ public class Binaural {
         wavBuff.putInt((int)(SAMPLE_RATE*BIT_DEPTH*NUM_CHANNELS/8));   // 29 - 32 lil: Byte rate: (sampleRate*bitsPerSample*numChannels)/8 (32-bit integer)
         wavBuff.putShort((short)(BIT_DEPTH*NUM_CHANNELS));             // 33 - 34 lil: Block align: (bitsPerSample*numChannels)/8 (16-bit integer)
         wavBuff.putShort((short)BIT_DEPTH);                            // 35 - 36 lil: Bits per sample
+
+        wavBuff.order(ByteOrder.BIG_ENDIAN);                           // BigEndian
+
         wavBuff.put("data".getBytes(), 0, 4);            // 37 - 40 big: "data" chunk header
+
+        wavBuff.order(ByteOrder.LITTLE_ENDIAN);                        // LittleEndian
+
         wavBuff.putInt(dataLengthBytes);                               // 41 - 44 lil: File size (data)
 
+        wavBuff.order(ByteOrder.BIG_ENDIAN);                           // BigEndian (default)
+        // Done writing wav file header
 
         // Append the byte data to the wav header
         ByteBuffer condensedChannels = condenseBuffers();

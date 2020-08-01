@@ -20,7 +20,6 @@ import android.widget.EditText;
 
 import java.io.File;
 
-// TODO: Figure out file storage and loading.
 public class MainActivity extends AppCompatActivity {
 
     // Default options
