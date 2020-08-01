@@ -140,7 +140,7 @@ public class Binaural {
         // Get the file length in bytes
         final int LENGTH_OF_FORMAT_DATA = 16;
         final int HEADER_LENGTH_BYTES = 44;
-        int dataLengthBytes = channelLength*NUM_CHANNELS*BIT_DEPTH/8;
+        int dataLengthBytes = channelLength*2*NUM_CHANNELS*BIT_DEPTH/8; // Times 2 because samples are in short, which are double the bytes
         int fileLength = HEADER_LENGTH_BYTES + dataLengthBytes;
 
         // Preallocate for the length of the file
@@ -167,7 +167,7 @@ public class Binaural {
         wavBuff.putShort((short)NUM_CHANNELS);                         // 23 - 24 lil: Number of channels (16-bit integer)
         wavBuff.putInt(SAMPLE_RATE);                                   // 25 - 28 lil: Sample rate (32-bit integer)
         wavBuff.putInt((int)(SAMPLE_RATE*BIT_DEPTH*NUM_CHANNELS/8));   // 29 - 32 lil: Byte rate: (sampleRate*bitsPerSample*numChannels)/8 (32-bit integer)
-        wavBuff.putShort((short)(BIT_DEPTH*NUM_CHANNELS/8));             // 33 - 34 lil: Block align: (bitsPerSample*numChannels)/8 (16-bit integer)
+        wavBuff.putShort((short)(BIT_DEPTH*NUM_CHANNELS/8));           // 33 - 34 lil: Block align: (bitsPerSample*numChannels)/8 (16-bit integer)
         wavBuff.putShort((short)BIT_DEPTH);                            // 35 - 36 lil: Bits per sample
 
         wavBuff.order(ByteOrder.BIG_ENDIAN);                           // BigEndian
