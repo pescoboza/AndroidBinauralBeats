@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
     private static final double DEFAULT_FREQUENCY = Binaural.CADUCEUS_FREQUENCIES.get(196); // 49.96882653 Hz
 
     private static final String CUSTOM_CLIP_BASENAME = "custom";
-    private static final double LOOPED_SAMPLE_DURATION_MS = 600;
+    private static final double LOOPED_SAMPLE_DURATION_SEC = 0.6;
     private static final int MAX_STREAMS = 6;
     private static final int SAMPLE_RATE = Binaural.SAMPLE_RATE;
     private static final short BIT_DEPTH = Binaural.BIT_DEPTH;
@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
 
                 // Generate the wav audio buffers
-                Binaural.generateBuffers(frequency, beat, shift, LOOPED_SAMPLE_DURATION_MS);
+                Binaural.generateBuffers(frequency, beat, shift, LOOPED_SAMPLE_DURATION_SEC);
 
                 // Create a .wav file from the PCM data
                 Context context = getApplicationContext();

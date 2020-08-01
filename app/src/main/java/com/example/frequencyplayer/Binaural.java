@@ -58,7 +58,7 @@ public class Binaural {
     private static double lastFrequency;
     private static double lastBeat;
     private static double lastShiftDeg;
-    private static int lastNumLoops;
+    private static double lastPeriodDuration;
 
     // Creates an audio buffer with a single period of sine.
     private static int[] createSinWavePeriod( double frequency, double shiftDeg) {
@@ -75,26 +75,23 @@ public class Binaural {
         return buffer;
     }
 
-    // Fills internal buffers with the discrete number of period loops to approximate the duration.
-    public static void generateBuffers(double frequency, double beat, double shiftDeg, double durationMs){
-        generateBuffers(frequency, beat, shiftDeg, (int)(durationMs*1000/frequency));
-    }
-
     // Fills internal buffers with a single period of frequency repeated n times.
-    public static void generateBuffers(double frequency, double beat, double shiftDeg, int numLoops){
+    public static void generateBuffers(double frequency, double beat, double shiftDeg, double durationSec){
+
+        if (durationSec <= 0) throw new IllegalArgumentException("Duration must me positive.");
+
         // Return early if the buffers are already full with the exact same parameters
         if (isBuffersFull &&
                 frequency == lastFrequency &&
                 beat == lastBeat &&
                 shiftDeg == lastShiftDeg &&
-                numLoops == lastNumLoops){
+                durationSec == lastPeriodDuration){
             Log.d("binaural", "Buffers already generated with the same parameters.");
             return;
         }
 
-        if (numLoops <= 0){
-            throw new IllegalArgumentException("Number of loops must me positive.");
-        }
+
+
 
         // Clear the current data buffers
         clearBuffers();
@@ -103,10 +100,11 @@ public class Binaural {
         int[] rightOnePeriod = createSinWavePeriod(frequency, 0.0);
         int[] leftOnePeriod = createSinWavePeriod(frequency + beat, shiftDeg);
 
-        // Repeat the period the needed number of times to fill the total sample size, cutting
-        // the excess of the the longest one to make both match
-        channelLength =  numLoops * Math.min(rightOnePeriod.length, leftOnePeriod.length);
+        // Calculate the channel size based on duration and sample rate
+        channelLength =  (int)durationSec*SAMPLE_RATE;
         channelsData = new int[NUM_CHANNELS][channelLength];
+
+        // Splice the periods to match the desired channel length
         channelsData[ChannelNum.RIGHT] = Util.concatTillLength(rightOnePeriod, channelLength);
         channelsData[ChannelNum.LEFT] = Util.concatTillLength(leftOnePeriod, channelLength);
 
@@ -115,7 +113,7 @@ public class Binaural {
         lastFrequency = frequency;
         lastBeat = beat;
         lastShiftDeg = shiftDeg;
-        lastNumLoops = numLoops;
+        lastPeriodDuration = durationSec;
     }
 
     public static void clearBuffers(){
