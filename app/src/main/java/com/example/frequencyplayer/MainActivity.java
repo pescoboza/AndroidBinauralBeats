@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
     private static final double DEFAULT_SHIFT = 180.0;
     private static final double DEFAULT_FREQUENCY = Binaural.CADUCEUS_FREQUENCIES.get(196); // 49.96882653 Hz
 
-    private static final String CUSTOM_CLIP_BASENAME = "custom";
+    private static final String CUSTOM_CLIP_BASENAME = "customBinauralSound";
     private static final double LOOPED_SAMPLE_DURATION_SEC = 0.6;
     private static final int MAX_STREAMS = 6;
     private static final int SAMPLE_RATE = Binaural.SAMPLE_RATE;
