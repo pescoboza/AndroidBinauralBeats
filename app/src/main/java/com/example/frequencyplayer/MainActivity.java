@@ -173,13 +173,18 @@ public class MainActivity extends AppCompatActivity {
                 });
 
                 // Wait for the sounds to load
-                while (!(isRightSoundReady && isLeftSoundReady)){
-                    try{
-                        Thread.sleep(30);
-                    }catch(InterruptedException e){
-                     Thread.currentThread().interrupt();
+                {
+                    int sleptFor = 0;
+                    while (!(isRightSoundReady && isLeftSoundReady)) {
+                        try {
+                            Thread.sleep(LOADING_DELAY_MS);
+
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                        sleptFor += LOADING_DELAY_MS;
                     }
-                    Log.d("appActivity", Slept for )
+                    Log.d("appActivity", String.format("Slept for %d ms.", sleptFor));
                 }
 
                 // Play the sound in a loop
