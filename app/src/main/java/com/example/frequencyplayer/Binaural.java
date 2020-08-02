@@ -13,7 +13,7 @@ import java.util.Map;
 public class Binaural {
 
     // Built in features
-    public static final int SAMPLE_RATE = 48000;
+    public static int sampleRate = 48000;
     public static final short BIT_DEPTH = 16;
     public static final short NUM_CHANNELS = 2;
     public static final String FILE_EXTENSION = ".wav";
@@ -39,8 +39,6 @@ public class Binaural {
         put(201, 554.1627785);
     }};
 
-
-
     // Data buffers
     private static int[] rightChannel;
     private static int[] leftChannel;
@@ -52,11 +50,19 @@ public class Binaural {
     private static double lastShiftDeg;
     private static double lastPeriodDuration;
 
+    public static void setSampleRate(int sampleRate) {
+        Binaural.sampleRate = sampleRate;
+    }
+
+    public static int getSampleRate() {
+        return sampleRate;
+    }
+
     // Creates an audio buffer with a single period of sine.
     private static int[] createSinWavePeriod( double frequency, double shiftDeg) {
 
         double shiftRad = Math.toRadians(shiftDeg);
-        int numSamplesPerPeriod = (int)(SAMPLE_RATE / frequency);
+        int numSamplesPerPeriod = (int)(sampleRate / frequency);
 
         int[] buffer = new int[numSamplesPerPeriod];
 
@@ -90,7 +96,7 @@ public class Binaural {
         int[] leftSinglePeriod = createSinWavePeriod(frequency + beat, shiftDeg);
 
         // Number of samples to match the duration desired
-        int numSamplesToMatchDuration =  (int)(durationSec*SAMPLE_RATE);
+        int numSamplesToMatchDuration =  (int)(durationSec*sampleRate);
 
         // Number of times each channel will be concatenated at the end of itself to match the
         // desired duration while keeping perfect loopability
@@ -128,7 +134,7 @@ public class Binaural {
         try {
             // Create right channel file
             File outputFileRight = File.createTempFile(rightBaseName, FILE_EXTENSION, context.getCacheDir());
-            WavFile wavFileRightChannel = WavFile.newWavFile(outputFileRight, NUM_CHANNELS, rightChannel.length, BIT_DEPTH, SAMPLE_RATE);
+            WavFile wavFileRightChannel = WavFile.newWavFile(outputFileRight, NUM_CHANNELS, rightChannel.length, BIT_DEPTH, sampleRate);
 
             // Write right channel
             for (int value : rightChannel) {
@@ -155,7 +161,7 @@ public class Binaural {
         try{
             // Create left channel file
             File outputFileLeft = File.createTempFile(leftBaseName, FILE_EXTENSION, context.getCacheDir());
-            WavFile wavFileLeftChannel = WavFile.newWavFile(outputFileLeft  , NUM_CHANNELS, rightChannel.length, BIT_DEPTH, SAMPLE_RATE);
+            WavFile wavFileLeftChannel = WavFile.newWavFile(outputFileLeft  , NUM_CHANNELS, rightChannel.length, BIT_DEPTH, sampleRate);
 
             // Write left channel
             for (int value : leftChannel){

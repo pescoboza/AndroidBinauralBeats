@@ -3,6 +3,7 @@ package com.example.frequencyplayer;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Bundle;
 import android.util.Log;
@@ -51,6 +52,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // To get preferred buffer size and sampling rate.
+        {
+            AudioManager audioManager = (AudioManager) this.getSystemService(getApplicationContext().AUDIO_SERVICE);
+            String rate = audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
+            String size = audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER);
+            Log.d("BuffSize and SampleRate", "Size :" + size + " & Rate: " + rate);
+
+            Binaural.setSampleRate(Integer.parseInt(rate));
+        }
         // Initialize audio attributes
         {
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
