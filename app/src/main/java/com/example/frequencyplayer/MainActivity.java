@@ -22,14 +22,18 @@ public class MainActivity extends AppCompatActivity {
     private static final double DEFAULT_FREQUENCY = Binaural.CADUCEUS_FREQUENCIES.get(196); // 49.96882653 Hz
 
     private static final String CUSTOM_CLIP_BASENAME = "customBinauralSound";
+    private static final String CUSTOM_RIGHT_CLIP_SUFFIX = "R";
+    private static final String CUSTOM_LEFT_CLIP_SUFFIX = "L";
     private static final double LOOPED_SAMPLE_DURATION_SEC = 0.6;
     private static final int MAX_STREAMS = 6;
     private static final int SAMPLE_RATE = Binaural.SAMPLE_RATE;
     private static final short BIT_DEPTH = Binaural.BIT_DEPTH;
 
     private static SoundPool soundPool;
-    private static int customSoundId;
-    private static int customSoundStreamId;
+    private static int customRightSoundId;
+    private static int customLeftSoundId;
+    private static int customRightSoundStreamId;
+    private static int customLeftSoundStreamId;
     // EditTexts
     private EditText et_frequency;
     private EditText et_beat;
@@ -68,8 +72,10 @@ public class MainActivity extends AppCompatActivity {
         et_beat = findViewById(R.id.et_beat);
         et_shift = findViewById(R.id.et_shift);
 
-        customSoundId = 0;
-        customSoundStreamId = 0;
+        customRightSoundId = 0;
+        customLeftSoundId = 0;
+        customRightSoundStreamId = 0;
+        customLeftSoundStreamId = 0;
     }
 
     private static Pair<Double, Boolean> validateValue(String str){
@@ -119,17 +125,29 @@ public class MainActivity extends AppCompatActivity {
 
                 // Create a .wav file from the PCM data
                 Context context = getApplicationContext();
-                File wavFile = Binaural.writeWaveFile(CUSTOM_CLIP_BASENAME, context);
+                File[] wavFiles = Binaural.writeWaveFiles(CUSTOM_CLIP_BASENAME + CUSTOM_RIGHT_CLIP_SUFFIX, CUSTOM_CLIP_BASENAME + CUSTOM_LEFT_CLIP_SUFFIX, context);
 
-                // Load the .wav file into the SoundPool
-                Log.d("appActivity", "Loading file \""+ wavFile.getAbsolutePath() + "\".");
-                customSoundId = soundPool.load(wavFile.getAbsolutePath() ,1);
 
-                // Delete the file once it is loaded inside the sound pool
-                if (!wavFile.delete()) throw new RuntimeException("Could not delete cache file.");
+                // Load the right channel .wav file into the SoundPool
+                Log.d("appActivity", "Loading file \""+ wavFiles[0].getAbsolutePath() + "\".");
+                customRightSoundId = soundPool.load(wavFiles[0].getAbsolutePath() ,1);
+
+                // Delete the right channel cache file
+                if (!wavFiles[0].delete()) throw new RuntimeException("Could not delete right channel cache file.");
+
+
+                // Load the left channel .wav file into the SoundPool
+                Log.d("appActivity", "Loading file \""+ wavFiles[1].getAbsolutePath() + "\".");
+                customLeftSoundId = soundPool.load(wavFiles[1].getAbsolutePath() ,1);
+
+                // Delete the left channel cache file
+                if (!wavFiles[0].delete()) throw new RuntimeException("Could not delete left channel cache file.");
+
 
                 // Play the sound in a loop
-                customSoundStreamId = soundPool.play(customSoundId, 1, 1, MAX_STREAMS, -1, 1);
+                customRightSoundStreamId = soundPool.play(customRightSoundId, 1, 1, MAX_STREAMS, -1, 1);
+                customLeftSoundStreamId = soundPool.play(customLeftSoundId, 1,1,MAX_STREAMS, -1, 1);
+
 
                 Log.d("appActivity", "*PLAY*");
             }

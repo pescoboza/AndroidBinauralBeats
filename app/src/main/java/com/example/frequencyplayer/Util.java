@@ -14,11 +14,20 @@ public class Util {
 
     // Concatenates the given array to match exactly the given length, cutting if necessary
     public static int[] concatTillLength( int[] src, int length){
-        int[] buff = new int[length];
+        int[] dst = new int[length];
         for (int i = 0; i < length; i++){
-            buff[i] = src[i % src.length];
+            dst[i] = src[i % src.length];
         }
-        return buff;
+        return dst;
+    }
+
+    public static int[] concatNTimes(int[] src, int numTimes){
+        int length = src.length * numTimes;
+        int[] dst = new int[length];
+        for (int i = 0; i < length; i++){
+            dst[i] = src[i % src.length];
+        }
+        return dst;
     }
 
 

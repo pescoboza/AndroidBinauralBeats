@@ -4,10 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,11 +17,6 @@ public class Binaural {
     public static final short BIT_DEPTH = 16;
     public static final short NUM_CHANNELS = 2;
     public static final String FILE_EXTENSION = ".wav";
-
-    private class ChannelNum{
-        static final int RIGHT = 0;
-        static final short LEFT = 1;
-    }
 
     // Caduceus frequencies in Hz with integer exponents [185, 201].
     public final static Map<Integer, Double> CADUCEUS_FREQUENCIES =  new HashMap<Integer, Double>(){{
@@ -50,8 +42,8 @@ public class Binaural {
 
 
     // Data buffers
-    private static int[][] channelsData;
-    private static int channelLength = 0; // Number of samples per channel
+    private static int[] rightChannel;
+    private static int[] leftChannel;
     private static boolean isBuffersFull = false;
 
     // Remembered values to avoid unnecessary buffer generation
@@ -90,23 +82,24 @@ public class Binaural {
             return;
         }
 
-
-
-
         // Clear the current data buffers
         clearBuffers();
 
         // Create buffers for the raw data of a single period
-        int[] rightOnePeriod = createSinWavePeriod(frequency, 0.0);
-        int[] leftOnePeriod = createSinWavePeriod(frequency + beat, shiftDeg);
+        int[] rightSinglePeriod = createSinWavePeriod(frequency, 0.0);
+        int[] leftSinglePeriod = createSinWavePeriod(frequency + beat, shiftDeg);
 
-        // Calculate the channel size based on duration and sample rate
-        channelLength =  (int)(durationSec*SAMPLE_RATE);
-        channelsData = new int[NUM_CHANNELS][channelLength];
+        // Number of samples to match the duration desired
+        int numSamplesToMatchDuration =  (int)(durationSec*SAMPLE_RATE);
+
+        // Number of times each channel will be concatenated at the end of itself to match the
+        // desired duration while keeping perfect loopability
+        int numConcatsRight = numSamplesToMatchDuration/rightSinglePeriod.length;
+        int numConcatsLeft = numSamplesToMatchDuration/leftSinglePeriod.length;
 
         // Splice the periods to match the desired channel length
-        channelsData[ChannelNum.RIGHT] = Util.concatTillLength(rightOnePeriod, channelLength);
-        channelsData[ChannelNum.LEFT] = Util.concatTillLength(leftOnePeriod, channelLength);
+        rightChannel = Util.concatNTimes(rightSinglePeriod, numConcatsRight);
+        leftChannel = Util.concatNTimes(leftSinglePeriod, numConcatsLeft);
 
         // Set the remembered values to the provided ones
         isBuffersFull = true;
@@ -117,32 +110,74 @@ public class Binaural {
     }
 
     public static void clearBuffers(){
-        channelsData = null;
-        channelLength = 0;
+        rightChannel = null;
+        leftChannel = null;
         isBuffersFull = false;
     }
 
 
     // Writes the wav file into cache and returns the absolute path.
-    public static File writeWaveFile(String baseName, Context context){
+    public static File[] writeWaveFiles(String rightBaseName, String leftBaseName, Context context){
         if (!isBuffersFull){
             throw new IllegalStateException("Audio data buffers must be generated first.");
         }
 
-        try{
-            File outputFile = File.createTempFile(baseName, FILE_EXTENSION, context.getCacheDir());
-            WavFile wavFile = WavFile.newWavFile(outputFile, NUM_CHANNELS, channelLength, BIT_DEPTH, SAMPLE_RATE);
-            wavFile.writeFrames(channelsData, 0, channelLength);
-            wavFile.close();
-            Log.d("binarual", String.format("Created cache file \"%s%s\".", baseName, FILE_EXTENSION));
-            return outputFile;
-        }catch (IOException e){
+        File[] files = new File[NUM_CHANNELS];
+
+        // Right channel file
+        try {
+            // Create right channel file
+            File outputFileRight = File.createTempFile(rightBaseName, FILE_EXTENSION, context.getCacheDir());
+            WavFile wavFileRightChannel = WavFile.newWavFile(outputFileRight, NUM_CHANNELS, rightChannel.length, BIT_DEPTH, SAMPLE_RATE);
+
+            // Write right channel
+            for (int value : rightChannel) {
+
+                int[][] temp = new int[NUM_CHANNELS][1];
+                temp[0][0] = value;
+
+                wavFileRightChannel.writeFrames(temp, 1);
+                Log.d("binarual", String.format("Created cache file \"%s%s\".",  rightBaseName, FILE_EXTENSION));
+            }
+            wavFileRightChannel.close();
+
+            files[0] = outputFileRight;
+
+        }catch(IOException e){
             e.printStackTrace();
-            Log.d("binarual", String.format("Error creating cache \"file %s%s\".", baseName, FILE_EXTENSION));
+            Log.d("binarual", String.format("Error creating cache \"file %s%s\".", rightBaseName, FILE_EXTENSION));
         }catch (WavFileException e){
             e.printStackTrace();
             Log.d("binarual", "WavFile writing error.");
         }
-        return null;
+
+        // Left channel file
+        try{
+            // Create left channel file
+            File outputFileLeft = File.createTempFile(leftBaseName, FILE_EXTENSION, context.getCacheDir());
+            WavFile wavFileLeftChannel = WavFile.newWavFile(outputFileLeft  , NUM_CHANNELS, rightChannel.length, BIT_DEPTH, SAMPLE_RATE);
+
+            // Write left channel
+            for (int value : leftChannel){
+
+                int[][] temp = new int[NUM_CHANNELS][1];
+                temp[1][0] = value; // 1 offset for left channel
+
+                wavFileLeftChannel.writeFrames(temp, 1);
+            }
+            wavFileLeftChannel.close();
+
+            files[1] = outputFileLeft;
+
+            Log.d("binarual", String.format("Created cache file \"%s%s\".",  leftBaseName, FILE_EXTENSION));
+        }catch (IOException e){
+            e.printStackTrace();
+            Log.d("binarual", String.format("Error creating cache \"file %s%s\".", leftBaseName, FILE_EXTENSION));
+        }catch (WavFileException e){
+            e.printStackTrace();
+            Log.d("binarual", "WavFile writing error.");
+        }
+
+        return files;
     }
 }
