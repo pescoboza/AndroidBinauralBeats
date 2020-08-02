@@ -24,7 +24,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String CUSTOM_CLIP_BASENAME = "customBinauralSound";
     private static final String CUSTOM_RIGHT_CLIP_SUFFIX = "R_";
     private static final String CUSTOM_LEFT_CLIP_SUFFIX = "L_";
-    private static final double LOOPED_SAMPLE_DURATION_SEC = 0.6;
+    private static final double LOOPED_SAMPLE_DURATION_SEC = 1;
     private static final int MAX_STREAMS = 6;
 
     private static SoundPool soundPool;

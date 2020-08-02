@@ -13,7 +13,7 @@ import java.util.Map;
 public class Binaural {
 
     // Built in features
-    public static final int SAMPLE_RATE = 44100;
+    public static final int SAMPLE_RATE = 48000;
     public static final short BIT_DEPTH = 16;
     public static final short NUM_CHANNELS = 2;
     public static final String FILE_EXTENSION = ".wav";
