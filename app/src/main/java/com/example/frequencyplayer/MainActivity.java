@@ -64,6 +64,22 @@ public class MainActivity extends AppCompatActivity {
                     .build();
         }
 
+        // Set the on load listener to notify when the sounds are ready
+        soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
+            @Override
+            public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
+                if (status != 0) {
+                    throw new IllegalStateException(String.format("Failed to load sound with id %d.", sampleId));
+                }
+
+                if (sampleId == customRightSoundId) {
+                    isRightSoundReady = true;
+                } else if (sampleId == customLeftSoundId) {
+                    isLeftSoundReady = true;
+                }
+            }
+        });
+
         // Initialize buttons
         // bt_play = findViewById(R.id.bt_play);
         // bt_stop = findViewById(R.id.bt_stop);
@@ -156,21 +172,6 @@ public class MainActivity extends AppCompatActivity {
 
                 // Stop the previous sound
                 stopSound();
-
-                soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
-                    @Override
-                    public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
-                        if (status != 0) {
-                            throw new IllegalStateException(String.format("Failed to load sound with id %d.", sampleId));
-                        }
-
-                        if (sampleId == customRightSoundId){
-                            isRightSoundReady = true;}
-                        else if (sampleId == customLeftSoundId){
-                            isLeftSoundReady = true;
-                        }
-                    }
-                });
 
                 // Wait for the sounds to load
                 {
