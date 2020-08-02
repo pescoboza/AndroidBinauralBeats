@@ -74,8 +74,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Default"
         android:onClick="bt_default_onClick"
+        android:text="Default"
         app:layout_constraintEnd_toEndOf="@+id/bt_play"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="@+id/bt_play"
@@ -86,9 +86,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Stop"
         android:onClick="bt_stop_onClick"
+        android:text="Stop"
         app:layout_constraintEnd_toEndOf="@+id/bt_default"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="@+id/bt_default"
         app:layout_constraintTop_toBottomOf="@+id/bt_play" />
 

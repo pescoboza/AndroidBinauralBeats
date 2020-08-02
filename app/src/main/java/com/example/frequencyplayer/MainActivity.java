@@ -2,9 +2,7 @@ package com.example.frequencyplayer;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.Context;
 import android.media.AudioAttributes;
-import android.media.AudioRecord;
 import android.media.SoundPool;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,19 +19,23 @@ public class MainActivity extends AppCompatActivity {
     private static final double DEFAULT_SHIFT = 180.0;
     private static final double DEFAULT_FREQUENCY = Binaural.CADUCEUS_FREQUENCIES.get(196); // 49.96882653 Hz
 
+    private static final int LOADING_DELAY_MS = 30;
+
     private static final String CUSTOM_CLIP_BASENAME = "customBinauralSound";
-    private static final String CUSTOM_RIGHT_CLIP_SUFFIX = "R";
-    private static final String CUSTOM_LEFT_CLIP_SUFFIX = "L";
+    private static final String CUSTOM_RIGHT_CLIP_SUFFIX = "R_";
+    private static final String CUSTOM_LEFT_CLIP_SUFFIX = "L_";
     private static final double LOOPED_SAMPLE_DURATION_SEC = 0.6;
     private static final int MAX_STREAMS = 6;
-    private static final int SAMPLE_RATE = Binaural.SAMPLE_RATE;
-    private static final short BIT_DEPTH = Binaural.BIT_DEPTH;
 
     private static SoundPool soundPool;
+    private static boolean isRightSoundReady;
+    private static boolean isLeftSoundReady;
     private static int customRightSoundId;
     private static int customLeftSoundId;
     private static int customRightSoundStreamId;
     private static int customLeftSoundStreamId;
+
+
     // EditTexts
     private EditText et_frequency;
     private EditText et_beat;
@@ -76,6 +78,9 @@ public class MainActivity extends AppCompatActivity {
         customLeftSoundId = 0;
         customRightSoundStreamId = 0;
         customLeftSoundStreamId = 0;
+
+        isRightSoundReady = false;
+        isLeftSoundReady = false;
     }
 
     private static Pair<Double, Boolean> validateValue(String str){
@@ -96,7 +101,6 @@ public class MainActivity extends AppCompatActivity {
 
     public void bt_play_onClick(View view) {
 
-
         // Get the string from the EditText objects
         String frequencyStr = et_frequency.getText().toString();
         String beatStr = et_beat.getText().toString();
@@ -115,6 +119,10 @@ public class MainActivity extends AppCompatActivity {
         // Debug logging info
         Log.d("appActivity", String.format("Frequency: %.5f Beat: %.5f Shift: %.5f", frequency, beat, shift));
 
+        // Set the audio channels from the sound pool to not ready
+        isLeftSoundReady = false;
+        isRightSoundReady = false;
+
         // Create runnable process for multithreading
         Runnable composeAndPlay = new Runnable() {
             @Override
@@ -123,31 +131,60 @@ public class MainActivity extends AppCompatActivity {
                 // Generate the wav audio buffers
                 Binaural.generateBuffers(frequency, beat, shift, LOOPED_SAMPLE_DURATION_SEC);
 
-                // Create a .wav file from the PCM data
-                Context context = getApplicationContext();
-                File[] wavFiles = Binaural.writeWaveFiles(CUSTOM_CLIP_BASENAME + CUSTOM_RIGHT_CLIP_SUFFIX, CUSTOM_CLIP_BASENAME + CUSTOM_LEFT_CLIP_SUFFIX, context);
+                // Create new .wav files from the PCM data
+                File[] wavFiles = Binaural.writeWaveFiles(CUSTOM_CLIP_BASENAME + CUSTOM_RIGHT_CLIP_SUFFIX, CUSTOM_CLIP_BASENAME + CUSTOM_LEFT_CLIP_SUFFIX, getApplicationContext());
 
+                for (int i = 0; i < Binaural.NUM_CHANNELS; i++){
+                    File wavFile = wavFiles[i];
+                    Log.d("appActivity", "Loading file \""+ wavFile.getAbsolutePath() + "\".");
 
-                // Load the right channel .wav file into the SoundPool
-                Log.d("appActivity", "Loading file \""+ wavFiles[0].getAbsolutePath() + "\".");
-                customRightSoundId = soundPool.load(wavFiles[0].getAbsolutePath() ,1);
+                    // Load cache file into sound pool
+                    switch (i){
+                        case 0:
+                            customRightSoundId = soundPool.load(wavFile.getAbsolutePath() ,1);
+                            break;
+                        case 1:
+                            customLeftSoundId = soundPool.load(wavFile.getAbsolutePath() ,1);
+                            break;
+                        default:
+                            throw new IllegalStateException("Invalid number of files received from wav file generator.");
+                    }
 
-                // Delete the right channel cache file
-                if (!wavFiles[0].delete()) throw new RuntimeException("Could not delete right channel cache file.");
+                    // Delete cache file
+                    if (!wavFile.delete()) throw new RuntimeException(String.format("Could not delete \"%s\" file.", wavFile.getAbsolutePath()));
+                }
 
+                // Stop the previous sound
+                stopSound();
 
-                // Load the left channel .wav file into the SoundPool
-                Log.d("appActivity", "Loading file \""+ wavFiles[1].getAbsolutePath() + "\".");
-                customLeftSoundId = soundPool.load(wavFiles[1].getAbsolutePath() ,1);
+                soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
+                    @Override
+                    public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
+                        if (status != 0) {
+                            throw new IllegalStateException(String.format("Failed to load sound with id %d.", sampleId));
+                        }
 
-                // Delete the left channel cache file
-                if (!wavFiles[0].delete()) throw new RuntimeException("Could not delete left channel cache file.");
+                        if (sampleId == customRightSoundId){
+                            isRightSoundReady = true;}
+                        else if (sampleId == customLeftSoundId){
+                            isLeftSoundReady = true;
+                        }
+                    }
+                });
 
+                // Wait for the sounds to load
+                while (!(isRightSoundReady && isLeftSoundReady)){
+                    try{
+                        Thread.sleep(30);
+                    }catch(InterruptedException e){
+                     Thread.currentThread().interrupt();
+                    }
+                    Log.d("appActivity", Slept for )
+                }
 
                 // Play the sound in a loop
                 customRightSoundStreamId = soundPool.play(customRightSoundId, 1, 1, MAX_STREAMS, -1, 1);
-                customLeftSoundStreamId = soundPool.play(customLeftSoundId, 1,1,MAX_STREAMS, -1, 1);
-
+                customLeftSoundStreamId = soundPool.play(customLeftSoundId, 1, 1, MAX_STREAMS, -1, 1);
 
                 Log.d("appActivity", "*PLAY*");
             }
@@ -155,7 +192,6 @@ public class MainActivity extends AppCompatActivity {
 
         Thread thread = new Thread(composeAndPlay);
         thread.start();
-
     }
 
     private void resetDefaultValuesInEditTexts(){
@@ -173,13 +209,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private static void stopSound(){
-        soundPool.stop(customSoundStreamId);
+        // Stop
+        soundPool.stop(customRightSoundStreamId);
+        soundPool.stop(customLeftSoundStreamId);
+
+        // Unload
+        soundPool.unload(customRightSoundId);
+        soundPool.unload(customLeftSoundId);
+
+        isRightSoundReady = false;
+        isLeftSoundReady = false;
+
         Log.d("appActivity", "*STOP*");
     }
 
     public void bt_stop_onClick(View view) {
-        // Make the sound pool go silent
         stopSound();
-        soundPool.unload(customSoundId);
     }
+
 }

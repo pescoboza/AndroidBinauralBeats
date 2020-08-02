@@ -137,11 +137,11 @@ public class Binaural {
                 temp[0][0] = value;
 
                 wavFileRightChannel.writeFrames(temp, 1);
-                Log.d("binarual", String.format("Created cache file \"%s%s\".",  rightBaseName, FILE_EXTENSION));
             }
             wavFileRightChannel.close();
-
             files[0] = outputFileRight;
+
+            Log.d("binarual", String.format("Created cache file \"%s%s\".",  rightBaseName, FILE_EXTENSION));
 
         }catch(IOException e){
             e.printStackTrace();
@@ -166,10 +166,10 @@ public class Binaural {
                 wavFileLeftChannel.writeFrames(temp, 1);
             }
             wavFileLeftChannel.close();
-
             files[1] = outputFileLeft;
 
             Log.d("binarual", String.format("Created cache file \"%s%s\".",  leftBaseName, FILE_EXTENSION));
+
         }catch (IOException e){
             e.printStackTrace();
             Log.d("binarual", String.format("Error creating cache \"file %s%s\".", leftBaseName, FILE_EXTENSION));
