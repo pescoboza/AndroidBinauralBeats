@@ -150,28 +150,12 @@ public class MainActivity extends AppCompatActivity {
                 // Create new .wav files from the PCM data
                 File[] wavFiles = Binaural.writeWaveFiles(CUSTOM_CLIP_BASENAME + CUSTOM_RIGHT_CLIP_SUFFIX, CUSTOM_CLIP_BASENAME + CUSTOM_LEFT_CLIP_SUFFIX, getApplicationContext());
 
-                for (int i = 0; i < Binaural.NUM_CHANNELS; i++){
-                    File wavFile = wavFiles[i];
-                    Log.d("appActivity", "Loading file \""+ wavFile.getAbsolutePath() + "\".");
+                // Load cache file into sound pool
+                Log.d("appActivity", "Loading file \""+ wavFiles[0].getAbsolutePath() + "\".");
+                customRightSoundId = soundPool.load(wavFiles[0].getAbsolutePath() ,1);
 
-                    // Load cache file into sound pool
-                    switch (i){
-                        case 0:
-                            customRightSoundId = soundPool.load(wavFile.getAbsolutePath() ,1);
-                            break;
-                        case 1:
-                            customLeftSoundId = soundPool.load(wavFile.getAbsolutePath() ,1);
-                            break;
-                        default:
-                            throw new IllegalStateException("Invalid number of files received from wav file generator.");
-                    }
-
-                    // Delete cache file
-                    if (!wavFile.delete()) throw new RuntimeException(String.format("Could not delete \"%s\" file.", wavFile.getAbsolutePath()));
-                }
-
-                // Stop the previous sound
-                stopSound();
+                Log.d("appActivity", "Loading file \""+ wavFiles[1].getAbsolutePath() + "\".");
+                customLeftSoundId = soundPool.load(wavFiles[1].getAbsolutePath() ,1);
 
                 // Wait for the sounds to load
                 {
@@ -187,6 +171,17 @@ public class MainActivity extends AppCompatActivity {
                     }
                     Log.d("appActivity", String.format("Slept for %d ms.", sleptFor));
                 }
+
+                // Delete the cache files
+                for (File wavFile : wavFiles){
+                    if (!wavFile.delete()){
+                        throw new IllegalStateException(
+                                String.format("Failed to deleted cache file \"%s\".", wavFile.getAbsolutePath()));
+                    }
+                }
+
+                // Stop the previous sound
+                stopSound();
 
                 // Play the sound in a loop
                 customRightSoundStreamId = soundPool.play(customRightSoundId, 1, 1, MAX_STREAMS, -1, 1);
