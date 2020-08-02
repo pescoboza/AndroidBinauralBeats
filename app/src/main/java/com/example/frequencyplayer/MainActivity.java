@@ -150,6 +150,9 @@ public class MainActivity extends AppCompatActivity {
                 // Create new .wav files from the PCM data
                 File[] wavFiles = Binaural.writeWaveFiles(CUSTOM_CLIP_BASENAME + CUSTOM_RIGHT_CLIP_SUFFIX, CUSTOM_CLIP_BASENAME + CUSTOM_LEFT_CLIP_SUFFIX, getApplicationContext());
 
+                // Stop the previous sound
+                stopAndUnloadsound();
+
                 // Load cache file into sound pool
                 Log.d("appActivity", "Loading file \""+ wavFiles[0].getAbsolutePath() + "\".");
                 customRightSoundId = soundPool.load(wavFiles[0].getAbsolutePath() ,1);
@@ -180,9 +183,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
 
-                // Stop the previous sound
-                stopSound();
-
                 // Play the sound in a loop
                 customRightSoundStreamId = soundPool.play(customRightSoundId, 1, 1, MAX_STREAMS, -1, 1);
                 customLeftSoundStreamId = soundPool.play(customLeftSoundId, 1, 1, MAX_STREAMS, -1, 1);
@@ -205,11 +205,11 @@ public class MainActivity extends AppCompatActivity {
 
     public void bt_default_onClick(View view) {
         // Stop the audio
-        stopSound();
+        stopAndUnloadsound();
         resetDefaultValuesInEditTexts();
     }
 
-    private static void stopSound(){
+    private static void stopAndUnloadsound(){
         // Stop
         soundPool.stop(customRightSoundStreamId);
         soundPool.stop(customLeftSoundStreamId);
@@ -218,6 +218,7 @@ public class MainActivity extends AppCompatActivity {
         soundPool.unload(customRightSoundId);
         soundPool.unload(customLeftSoundId);
 
+
         isRightSoundReady = false;
         isLeftSoundReady = false;
 
@@ -225,7 +226,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void bt_stop_onClick(View view) {
-        stopSound();
+        stopAndUnloadsound();
     }
 
 }
