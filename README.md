@@ -1,4 +1,4 @@
-# binaural_beats_android
+# Android Binaural Beats
 
 Java Android application to play custom binaural beats.
 
